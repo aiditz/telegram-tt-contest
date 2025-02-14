@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Editable Div Component</title>
+  <style>
+    body {
+      background-color: #222;
+      color: #ddd;
+      font-family: 'Arial', sans-serif;
+    }
+
+    blockquote, .blockquote {
+      display: block;
+      width: -moz-fit-content;
+      width: fit-content;
+      position: relative;
+      padding-inline: 0.5rem 1rem;
+      margin-block: 0.125rem;
+      border-radius: 0.25rem;
+      overflow: hidden;
+      background-color: rgba(246, 129, 54, 0.1);
+      white-space: pre-wrap;
+    }
+
+    pre, code {
+      display: inline-block;
+      color: rgb(135,116,225);
+      background: rgb(0,0,0,0.502);
+      white-space: pre-wrap;
+      padding: 1px 2px;
+      margin: 2px;
+      border-radius: 4px;
+    }
+
+    pre {
+      display: block;
+    }
+
+    blockquote::before, .blockquote::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      inset-inline-start: 0;
+      bottom: 0;
+      width: 3px;
+      background: rgb(246, 129, 54);
+    }
+
+    blockquote::after, .blockquote::after {
+      font-family: "icons" !important;
+      speak: none;
+      font-style: normal;
+      font-weight: normal;
+      font-variant: normal;
+      text-transform: none;
+      line-height: 1;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      content: "\f1a3";
+      color: rgb(255, 255, 255);
+      position: absolute;
+      top: 0.25rem;
+      inset-inline-end: 0.25rem;
+      font-size: 0.625rem;
+    }
+
+    from-scratch {
+      padding: 10px;
+      display: block;
+      background-color: #333;
+      color: #ccc;
+      width: 80vw;
+      height: 80vh;
+      /*white-space: pre-line;*/
+      border: 1px solid #666;
+      border-radius: 10px;
+      overflow: auto;
+    }
+
+    from-scratch:focus-visible {
+      border: 1px solid #888;
+      outline: none;
+    }
+  </style>
+  <script src="./FromScratch.js" type="module"></script>
+</head>
+<body>
+  SOME TEXT **bold** SOME TEXT *italic* SOME ~~strike~~ TEXT
+  <from-scratch contenteditable="true"></from-scratch>
+
+</body>
+</html>

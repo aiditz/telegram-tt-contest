@@ -38,8 +38,7 @@ const CodeBlock: FC<OwnProps> = ({ text, language, noCopy }) => {
 
   return (
     <div className="CodeBlock">
-      {language && (<p className="code-title">{getPrettyCodeLanguageName(language)}</p>)}
-      <pre className={blockClass} data-entity-type={ApiMessageEntityTypes.Pre} data-language={language}>
+      <pre className={blockClass} data-entity-type={ApiMessageEntityTypes.Pre} data-language={language && getPrettyCodeLanguageName(language)}>
         {highlighted ?? text}
         <CodeOverlay
           text={text}

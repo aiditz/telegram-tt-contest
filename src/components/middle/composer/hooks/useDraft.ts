@@ -6,7 +6,7 @@ import type { ThreadId } from '../../../../types';
 import type { Signal } from '../../../../util/signals';
 import { ApiMessageEntityTypes } from '../../../../api/types';
 
-import { DRAFT_DEBOUNCE } from '../../../../config';
+import { DRAFT_DEBOUNCE, EDITABLE_INPUT_CSS_SELECTOR } from '../../../../config';
 import {
   requestMeasure,
 } from '../../../../lib/fasterdom/fasterdom';
@@ -70,13 +70,17 @@ const useDraft = ({
     if (isDisabled || isEditing || !isTouchedRef.current) return;
 
     const html = getHtml();
+    const messageInput = document.querySelector<HTMLElement>(EDITABLE_INPUT_CSS_SELECTOR);
+    if (!messageInput) return;
+    const textPrepared = messageInput.getHtmlForSending();
+    const { text, entities } = parseHtmlAsFormattedText(textPrepared, false, true);
 
     if (html) {
       requestMeasure(() => {
         saveDraft({
           chatId: prevState.chatId ?? chatId,
           threadId: prevState.threadId ?? threadId,
-          text: parseHtmlAsFormattedText(html),
+          text: { text, entities },
         });
       });
     } else {

@@ -84,6 +84,8 @@ export default function useAttachmentModal({
   );
 
   const handleAppendFiles = useLastCallback(async (files: File[], isSpoiler?: boolean) => {
+    if (files.length === 0) return; // drag a text to input = bug
+
     if (editedMessage) {
       const newAttachment = await buildAttachment(files[0].name, files[0]);
       const canReplace = editedMessage && canReplaceMessageMedia(editedMessage, newAttachment);
@@ -106,6 +108,8 @@ export default function useAttachmentModal({
   });
 
   const handleFileSelect = useLastCallback(async (files: File[], suggestCompression?: boolean) => {
+    if (files.length === 0) return; // drag a text to input = bug
+
     if (editedMessage) {
       const newAttachment = await buildAttachment(files[0].name, files[0]);
       const canReplace = editedMessage && canReplaceMessageMedia(editedMessage, newAttachment);

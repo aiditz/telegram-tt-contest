@@ -18,20 +18,26 @@
     background: var(--bar-gradient, var(--accent-color));
   }
 
-  .code-title {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-weight: var(--font-weight-medium);
-    margin-bottom: 0.5rem;
-    color: var(--accent-color);
-    font-size: calc(var(--message-text-size, 1rem) - 0.125rem);
-  }
-
   .code-block {
     margin: 0;
     white-space: pre-wrap;
     overflow: hidden;
+
+    &:before {
+      display: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: var(--font-weight-medium);
+      margin-bottom: 0.5rem;
+      color: var(--accent-color);
+      font-size: calc(var(--message-text-size, 1rem) - 0.125rem);
+    }
+
+    &[data-language]:not([data-language=""]):before {
+      content: attr(data-language);
+      display: block;
+    }
 
     &:hover {
       .code-overlay {

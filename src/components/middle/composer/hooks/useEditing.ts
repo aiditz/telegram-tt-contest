@@ -19,6 +19,7 @@ import useEffectWithPrevDeps from '../../../../hooks/useEffectWithPrevDeps';
 import useLastCallback from '../../../../hooks/useLastCallback';
 import useBackgroundMode from '../../../../hooks/window/useBackgroundMode';
 import useBeforeUnload from '../../../../hooks/window/useBeforeUnload';
+import type { RefObject } from 'react';
 
 const URL_ENTITIES = new Set<string>([ApiMessageEntityTypes.TextUrl, ApiMessageEntityTypes.Url]);
 const DEBOUNCE_MS = 300;
@@ -33,6 +34,7 @@ const useEditing = (
   type: MessageListType,
   draft?: ApiDraft,
   editingDraft?: ApiFormattedText,
+  inputRef: RefObject<HTMLDivElement>,
 ): [VoidFunction, VoidFunction, boolean] => {
   const {
     editMessage, setEditingDraft, toggleMessageWebPage, openDeleteMessageModal,
@@ -88,7 +90,7 @@ const useEditing = (
   useEffect(() => {
     if (!editedMessage) return undefined;
     return () => {
-      const edited = parseHtmlAsFormattedText(getHtml());
+      const edited = parseHtmlAsFormattedText(inputRef.current.getHtmlForSending(), false, true);
       const update = edited.text.length ? edited : undefined;
 
       setEditingDraft({
@@ -145,7 +147,7 @@ const useEditing = (
   });
 
   const handleEditComplete = useLastCallback(() => {
-    const { text, entities } = parseHtmlAsFormattedText(getHtml());
+    const { text, entities } = parseHtmlAsFormattedText(inputRef.current.getHtmlForSending(), false, true);
 
     if (!editedMessage) {
       return;
@@ -168,7 +170,7 @@ const useEditing = (
 
   const handleBlur = useLastCallback(() => {
     if (!editedMessage) return;
-    const edited = parseHtmlAsFormattedText(getHtml());
+    const edited = parseHtmlAsFormattedText(inputRef.current.getHtmlForSending(), false, true);
     const update = edited.text.length ? edited : undefined;
 
     setEditingDraft({

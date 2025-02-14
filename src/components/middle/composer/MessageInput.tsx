@@ -570,7 +570,7 @@ const MessageInput: FC<OwnProps & StateProps> = ({
         onClick={!isAttachmentModalInput && !canSendPlainText ? handleClick : undefined}
       >
         <div className={inputScrollerContentClass}>
-          <div
+          <from-scratch
             ref={inputRef}
             id={editableInputId || EDITABLE_INPUT_ID}
             className={className}

@@ -40,6 +40,7 @@ interface ISelectedTextFormats {
   strikethrough?: boolean;
   monospace?: boolean;
   spoiler?: boolean;
+  quote?: boolean;
 }
 
 const TEXT_FORMAT_BY_TAG_NAME: Record<string, keyof ISelectedTextFormats> = {
@@ -50,7 +51,9 @@ const TEXT_FORMAT_BY_TAG_NAME: Record<string, keyof ISelectedTextFormats> = {
   U: 'underline',
   DEL: 'strikethrough',
   CODE: 'monospace',
+  PRE: 'monospace',
   SPAN: 'spoiler',
+  BLOCKQUOTE: 'quote',
 };
 const fragmentEl = document.createElement('div');
 
@@ -71,6 +74,17 @@ const TextFormatter: FC<OwnProps> = ({
   const [isEditingLink, setIsEditingLink] = useState(false);
   const [inputClassName, setInputClassName] = useState<string | undefined>();
   const [selectedTextFormats, setSelectedTextFormats] = useState<ISelectedTextFormats>({});
+
+  const getSelectedElement = useLastCallback(() => {
+    if (!selectedRange) {
+      return undefined;
+    }
+
+    // This fixes a bug when user selects text in a quote, but the button "unquote" is not active
+    return selectedRange.commonAncestorContainer instanceof Element
+      ? selectedRange.commonAncestorContainer
+      : selectedRange.commonAncestorContainer.parentElement;
+  });
 
   useEffect(() => (isOpen ? captureEscKeyListener(onClose) : undefined), [isOpen, onClose]);
   useVirtualBackdrop(
@@ -103,7 +117,9 @@ const TextFormatter: FC<OwnProps> = ({
     }
 
     const selectedFormats: ISelectedTextFormats = {};
-    let { parentElement } = selectedRange.commonAncestorContainer;
+
+    let parentElement = getSelectedElement();
+
     while (parentElement && parentElement.id !== EDITABLE_INPUT_ID) {
       const textFormat = TEXT_FORMAT_BY_TAG_NAME[parentElement.tagName];
       if (textFormat) {
@@ -135,7 +151,7 @@ const TextFormatter: FC<OwnProps> = ({
     }
   });
 
-  const getSelectedText = useLastCallback((shouldDropCustomEmoji?: boolean) => {
+  const getSelectedFragment = useLastCallback((shouldDropCustomEmoji?: boolean) => {
     if (!selectedRange) {
       return undefined;
     }
@@ -145,15 +161,11 @@ const TextFormatter: FC<OwnProps> = ({
         el.replaceWith(el.getAttribute('alt')!);
       });
     }
-    return fragmentEl.innerHTML;
+    return fragmentEl;
   });
 
-  const getSelectedElement = useLastCallback(() => {
-    if (!selectedRange) {
-      return undefined;
-    }
-
-    return selectedRange.commonAncestorContainer.parentElement;
+  const getSelectedText = useLastCallback((shouldDropCustomEmoji?: boolean) => {
+    return getSelectedFragment(shouldDropCustomEmoji)?.innerHTML || '';
   });
 
   function updateInputStyles() {
@@ -214,7 +226,7 @@ const TextFormatter: FC<OwnProps> = ({
         return;
       }
 
-      element.replaceWith(element.textContent);
+      element.replaceWith(...element.childNodes);
       setSelectedTextFormats((selectedFormats) => ({
         ...selectedFormats,
         spoiler: false,
@@ -278,7 +290,7 @@ const TextFormatter: FC<OwnProps> = ({
         return;
       }
 
-      element.replaceWith(element.textContent);
+      element.replaceWith(...element.childNodes);
       setSelectedTextFormats((selectedFormats) => ({
         ...selectedFormats,
         strikethrough: false,
@@ -288,8 +300,24 @@ const TextFormatter: FC<OwnProps> = ({
     }
 
     const text = getSelectedText();
-    document.execCommand('insertHTML', false, `<del>${text}</del>`);
+    insertHTML(`<del>${text}</del>`);
     onClose();
+  });
+
+  const insertHTML = useLastCallback((html) => {
+    const selection = window.getSelection();
+
+    if (!selection || !selection.focusNode) return;
+    if (selection.rangeCount === 0) return;
+
+    selection?.getRangeAt(0).deleteContents();
+    const tempDiv = document.createElement('DIV');
+    tempDiv.innerHTML = html;
+    const tempFragment = document.createDocumentFragment();
+    tempFragment.append(...tempDiv.childNodes);
+    selection?.getRangeAt(0).insertNode(tempFragment);
+
+    selection.focusNode.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
   });
 
   const handleMonospaceText = useLastCallback(() => {
@@ -298,13 +326,17 @@ const TextFormatter: FC<OwnProps> = ({
       if (
         !selectedRange
         || !element
-        || element.tagName !== 'CODE'
+        || !['CODE', 'PRE'].includes(element.tagName)
         || !element.textContent
       ) {
         return;
       }
 
-      element.replaceWith(element.textContent);
+      if (element.tagName === 'PRE' && element.parentElement?.classList.contains('CodeBlock')) {
+        element.parentElement.replaceWith(...element.childNodes);
+      } else {
+        element.replaceWith(...element.childNodes);
+      }
       setSelectedTextFormats((selectedFormats) => ({
         ...selectedFormats,
         monospace: false,
@@ -314,7 +346,37 @@ const TextFormatter: FC<OwnProps> = ({
     }
 
     const text = getSelectedText(true);
-    document.execCommand('insertHTML', false, `<code class="text-entity-code" dir="auto">${text}</code>`);
+    if (/(<br *\/?>|\n\r?)/i.test(text)) {
+      insertHTML(`<pre class="code-block">${text}</pre>`);
+    } else {
+      insertHTML(`<code class="text-entity-code" dir="auto">${text}</code>`);
+    }
+    onClose();
+  });
+
+  const handleQuoteText = useLastCallback(() => {
+    if (selectedTextFormats.quote) {
+      const element = getSelectedElement();
+      if (
+        !selectedRange
+        || !element
+        || element.tagName !== 'BLOCKQUOTE'
+        || !element.textContent
+      ) {
+        return;
+      }
+
+      element.replaceWith(...element.childNodes);
+      setSelectedTextFormats((selectedFormats) => ({
+        ...selectedFormats,
+        quote: false,
+      }));
+
+      return;
+    }
+
+    const text = getSelectedText();
+    insertHTML(`<blockquote class="blockquote">${text}</blockquote>`);
     onClose();
   });
 
@@ -464,6 +526,14 @@ const TextFormatter: FC<OwnProps> = ({
           onClick={handleMonospaceText}
         >
           <Icon name="monospace" />
+        </Button>
+        <Button
+          color="translucent"
+          ariaLabel="Quote"
+          className={getFormatButtonClassName('quote')}
+          onClick={handleQuoteText}
+        >
+          <Icon name="quote" />
         </Button>
         <div className="TextFormatter-divider" />
         <Button color="translucent" ariaLabel={lang('TextFormat.AddLinkTitle')} onClick={openLinkControl}>

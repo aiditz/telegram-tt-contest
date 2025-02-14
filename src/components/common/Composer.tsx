@@ -767,6 +767,7 @@ const Composer: FC<OwnProps & StateProps> = ({
     messageListType,
     draft,
     editingDraft,
+    inputRef,
   );
 
   // Handle chat change (should be placed after `useDraft` and `useEditing`)
@@ -924,6 +925,16 @@ const Composer: FC<OwnProps & StateProps> = ({
     return true;
   });
 
+  const getTextFromScratch = useLastCallback(() => {
+    const messageInput = document.querySelector<HTMLElement>(editableInputCssSelector);
+    if (!messageInput) return { text: '', entities: [] };
+
+    const textPrepared = messageInput.getHtmlForSending();
+    const { text, entities } = parseHtmlAsFormattedText(textPrepared, false, true);
+
+    return { text, entities };
+  });
+
   const sendAttachments = useLastCallback(({
     attachments: attachmentsToSend,
     sendCompressed = attachmentSettings.shouldCompress,
@@ -943,7 +954,7 @@ const Composer: FC<OwnProps & StateProps> = ({
       return;
     }
 
-    const { text, entities } = parseHtmlAsFormattedText(getHtml());
+    const { text, entities } = getTextFromScratch();
     if (!text && !attachmentsToSend.length) {
       return;
     }
@@ -1020,6 +1031,7 @@ const Composer: FC<OwnProps & StateProps> = ({
 
     let currentAttachments = attachments;
 
+
     if (activeVoiceRecording) {
       const record = await stopRecordingVoice();
       const ttlSeconds = isViewOnceEnabled ? ONE_TIME_MEDIA_TTL_SECONDS : undefined;
@@ -1033,7 +1045,7 @@ const Composer: FC<OwnProps & StateProps> = ({
       }
     }
 
-    const { text, entities } = parseHtmlAsFormattedText(getHtml());
+    const { text, entities } = getTextFromScratch();
 
     if (currentAttachments.length) {
       sendAttachments({
@@ -1049,8 +1061,6 @@ const Composer: FC<OwnProps & StateProps> = ({
     }
 
     if (!validateTextLength(text)) return;
-
-    const messageInput = document.querySelector<HTMLDivElement>(editableInputCssSelector);
 
     const effectId = effect?.id;
 

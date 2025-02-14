@@ -21,7 +21,7 @@ const DOCUMENT_TYPE_WORD = 'urn:schemas-microsoft-com:office:word';
 const NAMESPACE_PREFIX_WORD = 'xmlns:w';
 
 const VALID_TARGET_IDS = new Set([EDITABLE_INPUT_ID, EDITABLE_INPUT_MODAL_ID, EDITABLE_STORY_INPUT_ID]);
-const CLOSEST_CONTENT_EDITABLE_SELECTOR = 'div[contenteditable]';
+const CLOSEST_CONTENT_EDITABLE_SELECTOR = '[contenteditable]';
 
 const useClipboardPaste = (
   isActive: boolean,

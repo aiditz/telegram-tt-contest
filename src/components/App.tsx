@@ -22,6 +22,8 @@ import useAppLayout from '../hooks/useAppLayout';
 import useFlag from '../hooks/useFlag';
 import usePreviousDeprecated from '../hooks/usePreviousDeprecated';
 
+import '../../_contest/task1-editor/FromScratch';
+
 // import Test from './test/TestLocale';
 import Auth from './auth/Auth';
 import UiLoader from './common/UiLoader';

@@ -1,4 +1,4 @@
-dist/build-stats.json
+dist
 node_modules
 .cache
 .env
@@ -10,4 +10,5 @@ tests/
 dev/perf/screenshot*
 .DS_store
 .github/workflows/*
-!.github/workflows/package-and-publish.yml
+!.github/workflows/package-a.webpack_cache
+.webpack_cache

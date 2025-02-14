@@ -1,0 +1,301 @@
+import parseMarkdownToHtml from './markdownToHtml.js';
+import * as helpers from './helpers.js';
+import {
+  getClosestParentFromCursor, getNodeIndex,
+  removeCopiedGarbage,
+  saveCursorPosition, setCaretAfter,
+  setCaretBefore,
+} from './helpers.js';
+import { sanitizeRichDOM, sanitizeRichHtml } from './sanitizeRichHtml.js';
+import HistoryManager from './HistoryManager.js';
+
+//import './FromScratch.css';
+
+import TAGS_CONFIG_RENDERING from './TAGS_CONFIG_RENDERING.js';
+import TAGS_CONFIG_SENDING from './TAGS_CONFIG_SENDING.js';
+
+function log(...args) {
+  console.log('--- [from-scratch]', ...args);
+}
+
+log('module load');
+
+export default class FromScratch extends HTMLElement { // Safari does not support extending existing tags but it's ok
+  disableObserver = false;
+
+  history = new HistoryManager(this);
+
+  static get observedAttributes() {
+    return [''];
+  }
+
+  constructor() {
+    console.trace('constructor');
+    super();
+  }
+
+  connectedCallback() {
+    log('connectedCallback');
+    this.sanitizeMyself();
+    this.history.saveState();
+
+    this.addEventListener('input', this.handleInput);
+    this.addEventListener('paste', this.handlePaste);
+    this.addEventListener('keydown', this.handleKeyDown);
+    this.addEventListener('beforeinput', (e) => {
+      //this.history.updateCursor();
+    });
+    this.addEventListener('click', (e) => {
+      this.history.updateCursor();
+    });
+
+    let saveStateTimeout;
+
+    const observer = new MutationObserver((mutations) => {
+      if (this.disableObserver) {
+        log('-----mutation detected but disabled', mutations);
+        return;
+      }
+
+      let needSaveHistory;
+
+      mutations.forEach((mutation) => {
+        log('-----mutation type:', mutation.type, mutation);
+        if (false && mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node) => {
+            this.disableObserver = true;
+            // console.log('-----mutation bef:', this.outerHTML);
+            const {
+              isDomModified,
+            } = sanitizeRichDOM(node, TAGS_CONFIG_RENDERING, { includeRoot: true });
+            // console.log('-----mutation aft:', this.outerHTML);
+
+            if (isDomModified) {
+              needSaveHistory = true;
+            }
+
+            this.disableObserver = false;
+          });
+        }
+      });
+
+      if (mutations.some((mutation) => {
+        return Array.from(mutation.addedNodes)
+          .some((node) => node.nodeType !== Node.TEXT_NODE);
+      })) {
+      }
+
+      this.disableObserver = true;
+      this.sanitizeMyself();
+      log('-----mutation sanitizeMyself');
+      this.disableObserver = false;
+      if (saveStateTimeout) {
+        clearTimeout(saveStateTimeout);
+      }
+      saveStateTimeout = setTimeout(() => {
+        this.history.saveState();
+        this.dispatchInputEvent();
+      }, 0);
+    });
+    observer.observe(this, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  disconnectedCallback() {
+    log('disconnectedCallback');
+    this.removeEventListener('input', this.handleInput);
+    this.removeEventListener('paste', this.handlePaste);
+    this.removeEventListener('keydown', this.handleKeyDown);
+    // this.removeEventListener('blur', this.handleInput);
+  }
+
+  adoptedCallback() {
+    log('disconnectedCallback');
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    log('attributeChangedCallback', name, oldValue, newValue);
+  }
+
+  handleKeyDown(e) {
+    log('handleKeyDown', e);
+
+    if (e.keyCode === 32) { // Space
+      this.history.saveState();
+    }
+
+    if (e.keyCode === 13) { // Enter
+      this.history.saveState();
+    }
+
+    if (e.key === 'Delete') {
+      if (this.firstChild?.tagName === 'BR') {
+        this.firstChild.remove();
+        e.preventDefault();
+      }
+    }
+
+    if (e.key === 'ArrowUp' || e.key === 'Backspace') {
+      const blockSelector = 'pre, blockquote, div:has(pre, blockquote)';
+      const parentBlock = getClosestParentFromCursor(blockSelector, 'from-scratch');
+      const isFirstChildBlock = this.firstChild?.nodeType === Node.ELEMENT_NODE && this.firstChild.matches(blockSelector);
+      const cursorGlobal = saveCursorPosition(this);
+
+      const isNeedInsertNewline = e.key === 'ArrowUp' && cursorGlobal.startOffset === 0 && isFirstChildBlock;
+
+      if (isNeedInsertNewline) {
+        const br = document.createElement('br');
+        this.disableObserver = true;
+        this.prepend(br);
+        this.disableObserver = false;
+      } else if (parentBlock) {
+        const cursor = saveCursorPosition(parentBlock);
+
+        if (cursor.startOffset === 0) {
+          if (e.key === 'Backspace') {
+            const codeNodeIndex = getNodeIndex(this, parentBlock);
+            if (codeNodeIndex === 1 && this.firstChild?.tagName === 'BR') {
+              this.firstChild.remove();
+              e.preventDefault();
+            } else if (codeNodeIndex > 0) {
+              const prevNode = this.childNodes[codeNodeIndex - 1];
+              if (prevNode?.tagName === 'BR' && codeNodeIndex >= 2) {
+                setCaretBefore(prevNode);
+              } else {
+                setCaretAfter(prevNode);
+              }
+              e.preventDefault();
+            }
+          }
+        }
+      }
+    }
+
+    if (e.key === 'ArrowDown') {
+      if (!(this.lastChild instanceof Element) || this.lastChild.tagName !== 'BR') {
+        this.append(document.createElement('br'));
+        this.dispatchInputEvent();
+      }
+    }
+
+    if (e.ctrlKey || e.metaKey) {
+      if (!e.shiftKey && e.keyCode === 90) { // Ctrl+Z
+        e.preventDefault();
+        this.history.updateCurrent();
+        this.history.undo();
+        this.dispatchInputEvent();
+        this.sanitizeMyself();
+      } else if (e.keyCode === 89 || (e.keyCode === 90 && e.shiftKey)) { // Ctrl+Y or Ctrl+Shift+Z
+        e.preventDefault();
+        this.history.redo();
+        this.dispatchInputEvent();
+        this.sanitizeMyself();
+      }
+    }
+  }
+
+  handleInput(e) {
+    log('handleInput', e);
+    //const isDomModified = this.sanitizeMyself();
+    //this.history.updateCurrent();
+
+    //if (isDomModified) {
+      //e.stopPropagation();
+    //}
+  }
+
+  set innerHTML(value) {
+    log('set innerHTML', value);
+    value = parseMarkdownToHtml(value);
+    this.history.reset();
+    //super.innerHTML = '';
+    super.innerHTML = value;
+    //this.history.saveState();
+  }
+
+  get innerHTML() {
+    return super.innerHTML;
+  }
+
+  // Обработчик вставки из буфера
+  handlePaste(e) {
+    const clipboardData = e.clipboardData || window.clipboardData;
+    let html = clipboardData.getData('text/html');
+
+    if (!html) {
+      html = clipboardData.getData('text/plain');
+    }
+    log('handlePaste', html);
+    return;
+
+    html = removeCopiedGarbage(html);
+    html = parseMarkdownToHtml(html);
+
+
+    e.preventDefault();
+
+    this.history.saveState();
+    this.insertHtmlAtCursor(html);
+    this.history.saveState();
+  }
+
+  sanitizeMyself() {
+    const cursorPosition = helpers.saveCursorPosition2(this);
+
+    sanitizeRichDOM(this, TAGS_CONFIG_RENDERING);
+    log('sanitizeMyself');
+
+    if (cursorPosition) {
+      helpers.restoreCursorPosition2(this, cursorPosition);
+    }
+  }
+
+  insertHtmlAtCursor(html) {
+    log('insertHtmlAtCursor', html);
+
+    // html = html.replace(/(\n\r?)/g, '<br>');
+    const selection = window.getSelection();
+
+    if (!selection.rangeCount) return;
+
+    const cleanHTML = sanitizeRichHtml(html, TAGS_CONFIG_RENDERING);
+    const range = selection.getRangeAt(0);
+    const fragment = range.createContextualFragment(cleanHTML);
+
+    range.deleteContents();
+
+    range.insertNode(fragment);
+    range.collapse(false);
+    this.sanitizeMyself();
+
+    // const newRange = document.createRange();
+    // newRange.setStartAfter(range.endContainer);
+    // newRange.collapse(false);
+    //
+    // selection.removeAllRanges();
+    // selection.addRange(newRange);
+
+    //this.history.saveState();
+  }
+
+  dispatchInputEvent() {
+    log('dispatchInputEvent()');
+    this.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+  }
+
+  getHtmlForSending() {
+    return FromScratch.getHtmlForSending(this.innerHTML);
+  }
+
+  static getHtmlForSending(text) {
+    text = parseMarkdownToHtml(text);
+    text = sanitizeRichHtml(text, TAGS_CONFIG_SENDING);
+    text = text.trim().replace(/\u200b+/g, '');
+
+    return text;
+  }
+}
+
+customElements.define('from-scratch', FromScratch);
