@@ -44,7 +44,7 @@ export default {
   code: {
     removeIfEmpty: true,
     allowedChildTags: ['img'],
-    allowedAttributes: ['class', 'class', 'data-entity-type'],
+    allowedAttributes: [],
     requiredAttributes: [],
     validateAttribute: {
       //class: (value) => value === 'text-entity-code',
@@ -52,7 +52,7 @@ export default {
   },
   pre: {
     allowedChildTags: ['br', 'img'],
-    allowedAttributes: ['language', 'data-language', 'class', 'data-entity-type'],
+    allowedAttributes: ['language', 'data-language'],
     requiredAttributes: [],
     validateAttribute: {
       //class: (value) => value === 'code-block',
@@ -82,17 +82,13 @@ export default {
   a: {
     removeIfEmpty: true,
     allowedChildTags: [],
-    allowedAttributes: ['href', 'class', 'dir'],
+    allowedAttributes: ['href'],
     requiredAttributes: ['href'],
   },
   blockquote: {
     removeIfEmpty: true,
     allowedChildTags: ['b', 'i', 's', 'em', 'strong', 'strike', 'del', 'u', 'br', 'img'],
-    allowedAttributes: ['class', 'data-entity-type'],
-    requiredAttributes: [],
-  },
-  canvas: {
-    allowedAttributes: ['class'],
+    allowedAttributes: [],
     requiredAttributes: [],
   },
   span: {

@@ -1,5 +1,9 @@
 import { getChildTextNodes, styleStringToObject } from './helpers.js';
-import { getPrettyCodeLanguageName } from '../../src/util/prettyCodeLanguageNames';
+//import { getPrettyCodeLanguageName } from '../../src/util/prettyCodeLanguageNames';
+
+function getPrettyCodeLanguageName(s) {
+  return s;
+}
 
 export default {
   b: {
@@ -59,8 +63,8 @@ export default {
       //class: (value) => value === 'text-entity-code',
     },
     replaceFunction: (node) => {
-      //node.className = 'text-entity-code';
-      //node.setAttribute('dir', 'auto');
+      node.className = 'text-entity-code';
+      node.setAttribute('dir', 'auto');
       return node;
     },
   },
@@ -75,6 +79,10 @@ export default {
       node.className = 'code-block';
       node.dataset.entityType = 'MessageEntityPre';
       node.setAttribute('dir', 'auto');
+
+      if (node.getAttribute('language')) {
+        node.dataset.language = node.getAttribute('language');
+      }
 
       if (node.dataset.language) {
         const prettyLanguage = getPrettyCodeLanguageName(node.dataset.language);
@@ -139,7 +147,7 @@ export default {
         }
       }
 
-      if (node.childNodes.length === 1 && node.childNodes[0].nodeType === Node.ELEMENT_NODE && node.childNodes[0].tagName === 'DIV') {
+      if (node.childNodes.length === 1 && node.firstChild.nodeType === Node.ELEMENT_NODE && node.firstChild.tagName === 'DIV') {
         const fragment = document.createDocumentFragment();
         fragment.appendChild(...node.childNodes);
         return fragment;

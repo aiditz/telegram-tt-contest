@@ -1,22 +1,25 @@
-import { arraysIntersection, getChildTextNodes } from './helpers.js';
+import { arraysIntersection } from './helpers.js';
+import markdownToHtml from './markdownToHtml.js';
 
-export function sanitizeRichHtml(html, tagsConfig) {
+const BLOCK_TAGS = ['pre', 'div', 'blockquote'];
+
+export function sanitizeRichHtml(html, tagsConfig, { processMarkdown = false } = {}) {
   const parser = new DOMParser();
   const node = parser.parseFromString(html, 'text/html');
 
   if (!node || !node.body) {
-    return;
+    return '';
   }
 
-  sanitizeRichDOM(node.body, tagsConfig);
+  sanitizeRichDOM(node.body, tagsConfig, { processMarkdown });
 
   return node.body.innerHTML;
 }
 
-export function sanitizeRichDOM(rootNode, tagsConfig, { includeRoot = false } = {}) {
+export function sanitizeRichDOM(rootNode, tagsConfig, { includeRoot = false, processMarkdown = false } = {}) {
   let isDomModified = false;
 
-  const replaceNodeWithChildren = (node, parentAllowedChildTags) => {
+  function replaceNodeWithChildren(node, parentAllowedChildTags) {
     const parent = node.parentNode;
     if (!parent) {
       node.remove();
@@ -31,23 +34,15 @@ export function sanitizeRichDOM(rootNode, tagsConfig, { includeRoot = false } = 
       processNode(child, parentAllowedChildTags);
     });
 
-    parent.insertBefore(fragment, node);
-    node.remove();
-  };
-
-  const replaceNodeWithTextContent = (node) => {
-    const parent = node.parentNode;
-    if (!parent) {
-      node.remove();
-      return;
+    if (BLOCK_TAGS.includes(node.tagName.toLowerCase())) {
+      fragment.appendChild(document.createElement('BR'));
     }
 
-    var text = document.createTextNode(node.textContent);
-    parent.insertBefore(text, node);
+    parent.insertBefore(fragment, node);
     node.remove();
-  };
+  }
 
-  const processNode = (node, parentAllowedChildTags) => {
+  function processNode(node, parentAllowedChildTags) {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const tagName = node.tagName.toLowerCase();
       const config = tagsConfig[tagName];
@@ -91,7 +86,8 @@ export function sanitizeRichDOM(rootNode, tagsConfig, { includeRoot = false } = 
         });
       }
 
-      const hasAllRequired = !config.requiredAttributes || config.requiredAttributes.every((attr) => node.hasAttribute(attr));
+      const hasAllRequired = !config.requiredAttributes
+        || config.requiredAttributes.every((attr) => node.hasAttribute(attr));
 
       if (!hasAllRequired) {
         isDomModified = true;
@@ -117,11 +113,26 @@ export function sanitizeRichDOM(rootNode, tagsConfig, { includeRoot = false } = 
           node = newNode;
         }
       }
-    } else if (node.nodeType !== Node.TEXT_NODE) {
+    } else if (node.nodeType === Node.TEXT_NODE) {
+      if (processMarkdown && node.parentElement?.tagName !== 'PRE') {
+        const MARKDOWN_INLINE_TAGS = ['**', '*', '~~', '`', '['];
+        const md = markdownToHtml(node.textContent, { processOnlyTags: MARKDOWN_INLINE_TAGS });
+        if (md !== node.textContent) {
+          const div = document.createElement('DIV');
+          div.innerHTML = md;
+          const fragment = document.createDocumentFragment();
+          const childNodes = Array.from(div.childNodes);
+          childNodes.forEach((child) => {
+            fragment.appendChild(child);
+          });
+          node.replaceWith(fragment);
+        }
+      }
+    } else {
       isDomModified = true;
       node.remove();
     }
-  };
+  }
 
   if (includeRoot) {
     processNode(rootNode);

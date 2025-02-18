@@ -638,3 +638,11 @@ export function styleStringToObject(styleString) {
 
   return styleObject;
 }
+
+export function regIndexOf(reg, s, startPos) {
+  const match = s.slice(startPos).match(reg);
+
+  if (!match) return -1;
+
+  return match.index + startPos;
+}

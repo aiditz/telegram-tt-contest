@@ -206,12 +206,15 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     //}
   }
 
-  set innerHTML(value) {
-    log('set innerHTML', value);
-    value = parseMarkdownToHtml(value);
+  set innerHTML(text) {
+    log('set innerHTML', text);
+    text = text.replace(/<br *\/?>/gi, '\n');
+    text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: false });
+    text = parseMarkdownToHtml(text, { processOnlyTags: ['```'] });
+    text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: true });
     this.history.reset();
     //super.innerHTML = '';
-    super.innerHTML = value;
+    super.innerHTML = text;
     //this.history.saveState();
   }
 
@@ -227,18 +230,43 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     if (!html) {
       html = clipboardData.getData('text/plain');
     }
+
+    html = html.replace(/<br *\/?>/gi, '\n');
+    html = removeCopiedGarbage(html);
+    const hasPre = /<pre.*?>/i.test(html);
+    const htmlSanitized = sanitizeRichHtml(html, TAGS_CONFIG_RENDERING, { processMarkdown: false });
+
+    let text = htmlSanitized;
+    if (!hasPre) {
+      text = parseMarkdownToHtml(htmlSanitized, { processOnlyTags: ['```'] });
+    }
+    text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: true });
+
+    if (!hasPre && text !== htmlSanitized) {
+      if (confirm('Proceed as markdown?')) {
+        this.insertHtmlAtCursor(text);
+      } else {
+        this.insertHtmlAtCursor(html);
+      }
+    } else {
+      this.insertHtmlAtCursor(html);
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
     log('handlePaste', html);
     return;
 
-    html = removeCopiedGarbage(html);
-    html = parseMarkdownToHtml(html);
-
-
-    e.preventDefault();
-
-    this.history.saveState();
-    this.insertHtmlAtCursor(html);
-    this.history.saveState();
+    // html = removeCopiedGarbage(html);
+    // html = parseMarkdownToHtml(html);
+    //
+    //
+    // e.preventDefault();
+    //
+    // this.history.saveState();
+    // this.insertHtmlAtCursor(html);
+    // this.history.saveState();
   }
 
   sanitizeMyself() {
@@ -290,8 +318,10 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
   }
 
   static getHtmlForSending(text) {
-    text = parseMarkdownToHtml(text);
-    text = sanitizeRichHtml(text, TAGS_CONFIG_SENDING);
+    text = text.replace(/<br *\/?>/gi, '\n');
+    text = sanitizeRichHtml(text, TAGS_CONFIG_SENDING, { processMarkdown: false });
+    text = parseMarkdownToHtml(text, { processOnlyTags: ['```'] });
+    text = sanitizeRichHtml(text, TAGS_CONFIG_SENDING, { processMarkdown: true });
     text = text.trim().replace(/\u200b+/g, '');
 
     return text;

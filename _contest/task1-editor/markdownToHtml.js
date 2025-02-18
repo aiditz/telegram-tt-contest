@@ -1,3 +1,6 @@
+
+import { regIndexOf } from './helpers.js';
+
 const GREEDY_TAGS = ['`', '```'];
 
 class Node {
@@ -25,7 +28,7 @@ class Node {
         return `<code>${this.content}</code>`;
       case 'pre':
         return this.content.startsWith('language:')
-          ? `<pre data-language="${this.content.slice(9)}">${this.children.map(child => child.toString()).join('')}</pre>`
+          ? `<pre language="${this.content.slice(9)}">${this.children.map(child => child.toString()).join('')}</pre>`
           : `<pre>${this.children
             .map(child => child.toString())
             .join('')}</pre>`;
@@ -41,7 +44,7 @@ class Node {
   }
 }
 
-function parseMarkdownToHtml(text, { replaceNewlinesToBr } = {}) {
+function parseMarkdownToHtml(text, { replaceNewlinesToBr = false, processOnlyTags = [] } = {}) {
   let pos = 0;
 
   // if (typeof replaceNewlinesToBr === 'undefined') {
@@ -83,13 +86,25 @@ function parseMarkdownToHtml(text, { replaceNewlinesToBr } = {}) {
     }
   }
 
-  function parseInline(startPos, delimiter) {
+  function parseInline(startPos, delimiter, endPos) {
     const delimLength = delimiter.length;
     let searchPos = startPos + delimLength;
-    let depth = 1;
     let greedyTagOpened = '';
+    if (!endPos) endPos = text.length;
 
-    while (searchPos < text.length) {
+    const NEW_LINE = /(\n|<br *\/?>)/i;
+    const indexOfNewLine = regIndexOf(NEW_LINE, text, startPos);
+    if (indexOfNewLine !== -1 && indexOfNewLine < text.indexOf(delimiter, startPos)) {
+      return -1;
+    }
+
+    for (const greedyTag of GREEDY_TAGS) {
+      if (text.startsWith(greedyTag, startPos)) {
+        greedyTagOpened = greedyTagOpened ? '' : greedyTag;
+      }
+    }
+
+    while (searchPos < endPos) {
       try {
         checkProgress();
       } catch (err) {
@@ -109,11 +124,7 @@ function parseMarkdownToHtml(text, { replaceNewlinesToBr } = {}) {
 
       const prevSymbol = startPos > 0 ? text.charAt(searchPos - 1) : '';
       if (text.startsWith(delimiter, searchPos) && !/[\s\n\r ]/.test(prevSymbol)) {
-        depth--;
-        if (depth === 0) {
-          return searchPos;
-        }
-        searchPos += delimLength;
+        return searchPos;
       } else {
         searchPos++;
       }
@@ -135,7 +146,13 @@ function parseMarkdownToHtml(text, { replaceNewlinesToBr } = {}) {
       }
     }
 
-    let isCodeTagOpened = false;
+    function isTagOpening(tag) {
+      if (Array.isArray(processOnlyTags) && processOnlyTags.length > 0 && !processOnlyTags.includes(tag)) {
+        return false;
+      }
+
+      return text.startsWith(tag, pos);
+    }
 
     while (pos < endPos) {
       try {
@@ -147,55 +164,59 @@ function parseMarkdownToHtml(text, { replaceNewlinesToBr } = {}) {
 
       const nextSymbolIsSpace = /\s/.test(text.charAt(pos + 1));
 
-      if (text.startsWith('```', pos)) {
+      if (isTagOpening('```')) {
         flushTextBuffer();
         const start = pos + 3;
-        const endCodePos = text.indexOf('```', start);
+        let firstNewline = text.indexOf('\n', start);
+        const reg = firstNewline !== -1 ? /^ *``` *$/m : /```/;
+        let endCodePos = regIndexOf(reg, text, start); // text.indexOf('```', start);
 
         if (endCodePos === -1) {
-          textBuffer += text[pos];
-          pos++;
-          continue;
+          endCodePos = text.length;
+          // textBuffer += text[pos];
+          // pos++;
+          // continue;
         }
 
-        let content = text
-          .slice(start, endCodePos)
-          .split('\n')
-          .join('<br>');
+        let content = text.slice(start, endCodePos);
+          // .split('\n')
+          // .join('<br>');
 
-        let firstNewline = content.indexOf('<br>');
+        firstNewline = content.indexOf('\n');
         let language = '';
 
         if (firstNewline !== -1) {
           const possibleLang = content.slice(0, firstNewline).trim();
           if (possibleLang) {
             language = possibleLang;
-            content = content.slice(firstNewline + 4);
+            content = content.slice(firstNewline + 1);
           }
         }
 
-        const preNode = new Node('pre', language ? `language:${language}` : '');
-        content = content.trim();
-        preNode.children.push(new Node('text', content));
-        node.children.push(preNode);
+        const tag = content.includes('\n') ? 'pre' : 'code';
+
+        if (tag === 'pre') {
+          const preNode = new Node('pre', language ? `language:${language}` : '');
+          content = content.trim();
+          preNode.children.push(new Node('text', content));
+          node.children.push(preNode);
+        } else {
+          const codeNode = new Node('code', content);
+          node.children.push(codeNode);
+        }
         pos = endCodePos + 3;
-      } else if (text.startsWith('`', pos)) {
+      } else if (isTagOpening('`')) {
         flushTextBuffer();
         const start = pos + 1;
-        let endCodePos = -1;
 
-        for (let i = start; i < text.length; i++) {
-          try {
-            checkProgress();
-          } catch (err) {
-            i++;
-            continue;
-          }
-          if (text[i] === '`') {
-            endCodePos = i;
-            break;
-          }
+        if (text[start] === '`') {
+          textBuffer += text[pos];
+          textBuffer += text[start + 1];
+          pos += 2;
+          continue;
         }
+
+        const endCodePos = parseInline(pos, '`');
 
         if (endCodePos === -1) {
           textBuffer += text[pos];
@@ -205,8 +226,8 @@ function parseMarkdownToHtml(text, { replaceNewlinesToBr } = {}) {
         const codeNode = new Node('code', text.slice(start, endCodePos));
         node.children.push(codeNode);
         pos = endCodePos + 1;
-      } else if (!nextSymbolIsSpace && text.startsWith('**', pos)) {
-        const endBoldPos = parseInline(pos, '**');
+      } else if (!nextSymbolIsSpace && isTagOpening('**')) {
+        const endBoldPos = parseInline(pos, '**', endPos);
         if (endBoldPos === -1) {
           textBuffer += text[pos];
           pos++;
@@ -219,10 +240,10 @@ function parseMarkdownToHtml(text, { replaceNewlinesToBr } = {}) {
         boldNode.children = innerNode.children;
         node.children.push(boldNode);
         pos = endBoldPos + 2;
-      } else if (!nextSymbolIsSpace && text.startsWith('*', pos)) {
+      } else if (!nextSymbolIsSpace && isTagOpening('*')) {
         const nextSymbolIsSame = text.slice(pos + 1, 1) === '*';
 
-        const endItalicPos = parseInline(pos, '*');
+        const endItalicPos = parseInline(pos, '*', endPos);
         if (endItalicPos === -1 || nextSymbolIsSame) {
           textBuffer += text[pos];
           pos++;
@@ -235,8 +256,8 @@ function parseMarkdownToHtml(text, { replaceNewlinesToBr } = {}) {
         italicNode.children = innerNode.children;
         node.children.push(italicNode);
         pos = endItalicPos + 1;
-      } else if (!nextSymbolIsSpace && text.startsWith('~~', pos)) {
-        const endStrikePos = parseInline(pos, '~~');
+      } else if (!nextSymbolIsSpace && isTagOpening('~~')) {
+        const endStrikePos = parseInline(pos, '~~', endPos);
         if (endStrikePos === -1) {
           textBuffer += text[pos];
           pos++;
@@ -249,14 +270,14 @@ function parseMarkdownToHtml(text, { replaceNewlinesToBr } = {}) {
         strikeNode.children = innerNode.children;
         node.children.push(strikeNode);
         pos = endStrikePos + 2;
-      } else if (!nextSymbolIsSpace && text.startsWith('[', pos)) {
-        const endTextPos = parseInline(pos, ']');
+      } else if (!nextSymbolIsSpace && isTagOpening('[')) {
+        const endTextPos = parseInline(pos, ']', endPos);
         if (endTextPos === -1 || text[endTextPos + 1] !== '(') {
           textBuffer += text[pos];
           pos++;
           continue;
         }
-        const endUrlPost = parseInline(endTextPos + 1, ')');
+        const endUrlPost = parseInline(endTextPos + 1, ')', endPos);
         if (endUrlPost === -1) {
           textBuffer += text[pos];
           pos++;
