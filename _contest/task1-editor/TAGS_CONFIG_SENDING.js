@@ -66,11 +66,10 @@ export default {
     },
   },
   img: {
-    allowedAttributes: ['src', 'data-emoji', 'class', 'alt', 'draggable'],
     requiredAttributes: ['class', 'alt'], // src is not an attribute o_O
     validateAttribute: {
       class: (values) => values.split(/ +/)
-        .every((value) => ['emoji', 'emoji-small'].includes(value)),
+        .every((value) => ['emoji', 'emoji-small', 'data-sticker-emoji'].includes(value)),
     },
     replaceFunction: (node) => {
       if (node.dataset.documentId) { // Custom Emoji

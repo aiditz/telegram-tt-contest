@@ -37,7 +37,7 @@ const ANIMATION_DURATION = 350;
 const STICKERS_TAB_INDEX = 2;
 
 export type OwnProps = {
-  chatId: string;
+  chatId?: string;
   threadId?: ThreadId;
   isOpen: boolean;
   canSendStickers?: boolean;
@@ -56,7 +56,7 @@ export type OwnProps = {
     canUpdateStickerSetsOrder?: boolean,
   ) => void;
   onGifSelect?: (gif: ApiVideo, isSilent?: boolean, shouldSchedule?: boolean) => void;
-  onRemoveSymbol: () => void;
+  onRemoveSymbol?: () => void;
   onSearchOpen: (type: 'stickers' | 'gifs') => void;
   addRecentEmoji: GlobalActions['addRecentEmoji'];
   addRecentCustomEmoji: GlobalActions['addRecentCustomEmoji'];

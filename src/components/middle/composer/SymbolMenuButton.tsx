@@ -1,4 +1,4 @@
-import type { FC } from '../../../lib/teact/teact';
+import type { FC, TeactNode } from '../../../lib/teact/teact';
 import React, { memo, useRef, useState } from '../../../lib/teact/teact';
 import { getActions } from '../../../global';
 
@@ -16,11 +16,13 @@ import Button from '../../ui/Button';
 import ResponsiveHoverButton from '../../ui/ResponsiveHoverButton';
 import Spinner from '../../ui/Spinner';
 import SymbolMenu from './SymbolMenu.async';
+import renderText from '../../common/helpers/renderText';
+import { MenuPositionOptions } from '../../../hooks/useMenuPosition';
 
 const MOBILE_KEYBOARD_HIDE_DELAY_MS = 100;
 
 type OwnProps = {
-  chatId: string;
+  chatId?: string;
   threadId?: ThreadId;
   isMobile?: boolean;
   isReady?: boolean;
@@ -41,7 +43,7 @@ type OwnProps = {
     canUpdateStickerSetsOrder?: boolean,
   ) => void;
   onGifSelect?: (gif: ApiVideo, isSilent?: boolean, shouldSchedule?: boolean) => void;
-  onRemoveSymbol: VoidFunction;
+  onRemoveSymbol?: VoidFunction;
   onEmojiSelect: (emoji: string) => void;
   closeBotCommandMenu?: VoidFunction;
   closeSendAsMenu?: VoidFunction;
@@ -50,7 +52,8 @@ type OwnProps = {
   canSendPlainText?: boolean;
   className?: string;
   inputCssSelector?: string;
-};
+  icon?: TeactNode;
+} & MenuPositionOptions;
 
 const SymbolMenuButton: FC<OwnProps> = ({
   chatId,
@@ -77,6 +80,8 @@ const SymbolMenuButton: FC<OwnProps> = ({
   onEmojiSelect,
   closeBotCommandMenu,
   closeSendAsMenu,
+  icon,
+  ...positionOptions
 }) => {
   const {
     setStickerSearchQuery,
@@ -141,6 +146,8 @@ const SymbolMenuButton: FC<OwnProps> = ({
   const getMenuElement = useLastCallback(() => document.querySelector('#portals .SymbolMenu .bubble'));
   const getLayout = useLastCallback(() => ({ withPortal: true }));
 
+  const iconElement = icon || <Icon name="smile" />;
+
   return (
     <>
       {isMobile ? (
@@ -151,7 +158,7 @@ const SymbolMenuButton: FC<OwnProps> = ({
           onClick={isSymbolMenuOpen ? closeSymbolMenu : handleSymbolMenuOpen}
           ariaLabel="Choose emoji, sticker or GIF"
         >
-          <Icon name="smile" />
+          {iconElement}
           <Icon name="keyboard" />
           {isSymbolMenuOpen && !isSymbolMenuLoaded && <Spinner color="gray" />}
         </Button>
@@ -164,7 +171,7 @@ const SymbolMenuButton: FC<OwnProps> = ({
           ariaLabel="Choose emoji, sticker or GIF"
         >
           <div ref={triggerRef} className="symbol-menu-trigger" />
-          <Icon name="smile" />
+          {iconElement}
         </ResponsiveHoverButton>
       )}
 
@@ -194,6 +201,8 @@ const SymbolMenuButton: FC<OwnProps> = ({
         getRootElement={isAttachmentModal ? getRootElement : undefined}
         getMenuElement={isAttachmentModal ? getMenuElement : undefined}
         getLayout={isAttachmentModal ? getLayout : undefined}
+        // eslint-disable-next-line react/jsx-props-no-spreading
+        {...positionOptions}
       />
     </>
   );

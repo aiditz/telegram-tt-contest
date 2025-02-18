@@ -119,7 +119,7 @@
     width: calc(100vw - env(safe-area-inset-left)) !important;
 
     // Fix: when opening the SymbolMenu, the chat list flashes in the background
-    body.is-symbol-menu-open &::before {
+    body.is-symbol-menu-open:has(.messages-layout) &::before {
       content: '';
       position: absolute;
       left: 0;

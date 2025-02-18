@@ -4,7 +4,7 @@ import React, {
 } from '../../../../lib/teact/teact';
 import { getActions, getGlobal, withGlobal } from '../../../../global';
 
-import type { ApiChatlistExportedInvite } from '../../../../api/types';
+import type { ApiChatlistExportedInvite, ApiSticker } from '../../../../api/types';
 import type {
   FolderEditDispatch,
   FoldersState,
@@ -31,6 +31,7 @@ import FloatingActionButton from '../../../ui/FloatingActionButton';
 import InputText from '../../../ui/InputText';
 import ListItem from '../../../ui/ListItem';
 import Spinner from '../../../ui/Spinner';
+import FolderNameInput from '../../../ui/FolderNameInput';
 
 type OwnProps = {
   state: FoldersState;
@@ -154,6 +155,11 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
   const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { currentTarget } = event;
     dispatch({ type: 'setTitle', payload: currentTarget.value.trim() });
+  }, [dispatch]);
+
+  const handleEmoticonChange = useCallback((event: string | ApiSticker) => {
+    const payload = typeof event === 'string' ? event : event.emoji;
+    dispatch({ type: 'setEmoticon', payload });
   }, [dispatch]);
 
   const handleSubmit = useCallback(() => {
@@ -296,11 +302,13 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
             </p>
           )}
 
-          <InputText
+          <FolderNameInput
             className="mb-0"
             label={lang('FilterNameHint')}
             value={state.folder.title.text}
+            emoticon={state.folder.emoticon}
             onChange={handleChange}
+            onEmoticonChange={handleEmoticonChange}
             error={state.error && state.error === ERROR_NO_TITLE ? ERROR_NO_TITLE : undefined}
           />
         </div>

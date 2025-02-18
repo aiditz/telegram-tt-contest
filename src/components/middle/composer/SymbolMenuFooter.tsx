@@ -12,7 +12,7 @@ import Button from '../../ui/Button';
 type OwnProps = {
   activeTab: SymbolMenuTabs;
   onSwitchTab: (tab: SymbolMenuTabs) => void;
-  onRemoveSymbol: () => void;
+  onRemoveSymbol?: () => void;
   onSearchOpen: (type: 'stickers' | 'gifs') => void;
   isAttachmentModal?: boolean;
   canSendPlainText?: boolean;
@@ -90,7 +90,7 @@ const SymbolMenuFooter: FC<OwnProps> = ({
       {!isAttachmentModal && renderTabButton(SymbolMenuTabs.Stickers)}
       {!isAttachmentModal && renderTabButton(SymbolMenuTabs.GIFs)}
 
-      {(activeTab === SymbolMenuTabs.Emoji || activeTab === SymbolMenuTabs.CustomEmoji) && (
+      {onRemoveSymbol && (activeTab === SymbolMenuTabs.Emoji || activeTab === SymbolMenuTabs.CustomEmoji) && (
         <Button
           className="symbol-delete-button"
           onClick={onRemoveSymbol}

@@ -73,8 +73,8 @@ export function sanitizeRichDOM(rootNode, tagsConfig, { includeRoot = false } = 
         return;
       }
 
-      Array.from(node.attributes)
-        .forEach((attr) => {
+      if (config.allowedAttributes) {
+        Array.from(node.attributes).forEach((attr) => {
           const attrName = attr.name.toLowerCase();
 
           if (!config.allowedAttributes.includes(attrName)) {
@@ -89,8 +89,9 @@ export function sanitizeRichDOM(rootNode, tagsConfig, { includeRoot = false } = 
             node.removeAttribute(attr.name);
           }
         });
+      }
 
-      const hasAllRequired = config.requiredAttributes.every((attr) => node.hasAttribute(attr));
+      const hasAllRequired = !config.requiredAttributes || config.requiredAttributes.every((attr) => node.hasAttribute(attr));
 
       if (!hasAllRequired) {
         isDomModified = true;

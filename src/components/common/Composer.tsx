@@ -102,7 +102,6 @@ import buildClassName from '../../util/buildClassName';
 import { formatMediaDuration, formatVoiceRecordDuration } from '../../util/dates/dateFormat';
 import { processDeepLink } from '../../util/deeplink';
 import { tryParseDeepLink } from '../../util/deepLinkParser';
-import deleteLastCharacterOutsideSelection from '../../util/deleteLastCharacterOutsideSelection';
 import { processMessageInputForCustomEmoji } from '../../util/emoji/customEmojiManager';
 import focusEditableElement from '../../util/focusEditableElement';
 import { MEMO_EMPTY_ARRAY } from '../../util/memo';
@@ -1197,6 +1196,10 @@ const Composer: FC<OwnProps & StateProps> = ({
     insertCustomEmojiAndUpdateCursor(emoji, inInputId);
   });
 
+  const handleRemoveSymbol = useLastCallback(() => {
+    removeSymbol();
+  });
+
   const handleCustomEmojiSelectAttachmentModal = useLastCallback((emoji: ApiSticker) => {
     handleCustomEmojiSelect(emoji, EDITABLE_INPUT_MODAL_ID);
   });
@@ -1363,6 +1366,7 @@ const Composer: FC<OwnProps & StateProps> = ({
   });
 
   const removeSymbol = useLastCallback((inInputId = editableInputId) => {
+    document.querySelector(`#${inInputId}`)?.focus();
     const selection = window.getSelection()!;
 
     if (selection.rangeCount) {
@@ -1372,8 +1376,6 @@ const Composer: FC<OwnProps & StateProps> = ({
         return;
       }
     }
-
-    setHtml(deleteLastCharacterOutsideSelection(getHtml()));
   });
 
   const removeSymbolAttachmentModal = useLastCallback(() => {
@@ -1825,7 +1827,7 @@ const Composer: FC<OwnProps & StateProps> = ({
               onGifSelect={handleGifSelect}
               onStickerSelect={handleStickerSelect}
               onCustomEmojiSelect={handleCustomEmojiSelect}
-              onRemoveSymbol={removeSymbol}
+              onRemoveSymbol={handleRemoveSymbol}
               onEmojiSelect={insertTextAndUpdateCursor}
               closeBotCommandMenu={closeBotCommandMenu}
               closeSendAsMenu={closeSendAsMenu}
