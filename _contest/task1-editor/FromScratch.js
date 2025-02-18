@@ -140,6 +140,7 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     if (e.key === 'ArrowUp' || e.key === 'Backspace') {
       const blockSelector = 'pre, blockquote, div:has(pre, blockquote)';
       const parentBlock = getClosestParentFromCursor(blockSelector, 'from-scratch');
+      this.normalize();
       const isFirstChildBlock = this.firstChild?.nodeType === Node.ELEMENT_NODE && this.firstChild.matches(blockSelector);
       const cursorGlobal = saveCursorPosition(this);
 
@@ -174,9 +175,21 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     }
 
     if (e.key === 'ArrowDown') {
-      if (!(this.lastChild instanceof Element) || this.lastChild.tagName !== 'BR') {
-        this.append(document.createElement('br'));
-        this.dispatchInputEvent();
+      const blockSelector = 'pre, blockquote, div:has(pre, blockquote)';
+      const parentBlock = getClosestParentFromCursor(blockSelector, 'from-scratch');
+
+      if (parentBlock) {
+        this.normalize();
+        const isLastChildBlock = this.lastChild?.nodeType === Node.ELEMENT_NODE && this.lastChild.matches(blockSelector);
+        const cursorGlobal = saveCursorPosition(this);
+        const isNeedInsertNewline = cursorGlobal.startOffset >= this.textContent.length && isLastChildBlock;
+
+        if (isNeedInsertNewline) {
+          this.disableObserver = true;
+          this.append(document.createElement('br'));
+          this.disableObserver = false;
+          this.dispatchInputEvent();
+        }
       }
     }
 
