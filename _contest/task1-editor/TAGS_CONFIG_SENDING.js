@@ -87,7 +87,7 @@ export default {
   },
   blockquote: {
     removeIfEmpty: true,
-    allowedChildTags: ['b', 'i', 's', 'em', 'strong', 'strike', 'del', 'u', 'br', 'img'],
+    allowedChildTags: ['b', 'i', 's', 'em', 'strong', 'strike', 'del', 'u', 'br', 'img', 'span'],
     allowedAttributes: [],
     requiredAttributes: [],
   },

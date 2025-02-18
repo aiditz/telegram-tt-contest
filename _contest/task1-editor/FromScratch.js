@@ -30,14 +30,14 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
   }
 
   constructor() {
-    console.trace('constructor');
+    log('constructor');
     super();
   }
 
   connectedCallback() {
     log('connectedCallback');
     this.sanitizeMyself();
-    this.history.saveState();
+    this.history.reset();
 
     this.addEventListener('input', this.handleInput);
     this.addEventListener('paste', this.handlePaste);
@@ -46,7 +46,7 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
       //this.history.updateCursor();
     });
     this.addEventListener('click', (e) => {
-      this.history.updateCursor();
+      this.history.saveState();
     });
 
     let saveStateTimeout;
@@ -79,21 +79,22 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
         }
       });
 
-      if (mutations.some((mutation) => {
+      const isDomModified = mutations.some((mutation) => {
         return Array.from(mutation.addedNodes)
           .some((node) => node.nodeType !== Node.TEXT_NODE);
-      })) {
-      }
+      });
 
       this.disableObserver = true;
       this.sanitizeMyself();
       log('-----mutation sanitizeMyself');
       this.disableObserver = false;
+      if (isDomModified) {
+        this.history.saveState();
+      }
       if (saveStateTimeout) {
         clearTimeout(saveStateTimeout);
       }
       saveStateTimeout = setTimeout(() => {
-        this.history.saveState();
         this.dispatchInputEvent();
       }, 0);
     });
@@ -196,7 +197,6 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     if (e.ctrlKey || e.metaKey) {
       if (!e.shiftKey && e.keyCode === 90) { // Ctrl+Z
         e.preventDefault();
-        this.history.updateCurrent();
         this.history.undo();
         this.dispatchInputEvent();
         this.sanitizeMyself();
@@ -225,10 +225,10 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: false });
     text = parseMarkdownToHtml(text, { processOnlyTags: ['```'] });
     text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: true });
-    this.history.reset();
     //super.innerHTML = '';
     super.innerHTML = text;
-    //this.history.saveState();
+    this.history.reset();
+    this.history.saveState();
   }
 
   get innerHTML() {
@@ -249,15 +249,15 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     const hasPre = /<pre.*?>/i.test(html);
     const htmlSanitized = sanitizeRichHtml(html, TAGS_CONFIG_RENDERING, { processMarkdown: false });
 
-    let text = htmlSanitized;
+    let md = '';
     if (!hasPre) {
-      text = parseMarkdownToHtml(htmlSanitized, { processOnlyTags: ['```'] });
+      md = parseMarkdownToHtml(htmlSanitized, { processOnlyTags: ['```'] });
+      md = sanitizeRichHtml(md, TAGS_CONFIG_RENDERING, { processMarkdown: true });
     }
-    text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: true });
 
-    if (!hasPre && text !== htmlSanitized) {
+    if (!hasPre && md !== htmlSanitized) {
       if (confirm('Proceed as markdown?')) {
-        this.insertHtmlAtCursor(text);
+        this.insertHtmlAtCursor(md);
       } else {
         this.insertHtmlAtCursor(html);
       }

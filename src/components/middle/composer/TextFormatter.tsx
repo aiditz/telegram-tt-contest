@@ -41,9 +41,11 @@ interface ISelectedTextFormats {
   monospace?: boolean;
   spoiler?: boolean;
   quote?: boolean;
+  link?: boolean;
 }
 
 const TEXT_FORMAT_BY_TAG_NAME: Record<string, keyof ISelectedTextFormats> = {
+  A: 'link',
   B: 'bold',
   STRONG: 'bold',
   I: 'italic',
@@ -380,6 +382,31 @@ const TextFormatter: FC<OwnProps> = ({
     onClose();
   });
 
+  const handleLinkText = useLastCallback(() => {
+    const formattedLinkUrl = (ensureProtocol(linkUrl) || '').split('%').map(encodeURI).join('%');
+
+    if (selectedTextFormats.link) {
+      const element = getSelectedElement();
+      if (
+        !selectedRange
+        || !element
+        || element.tagName !== 'A'
+        || !element.textContent
+      ) {
+        return;
+      }
+
+      element.replaceWith(...element.childNodes);
+      setSelectedTextFormats((selectedFormats) => ({
+        ...selectedFormats,
+        link: false,
+      }));
+      return;
+    }
+
+    openLinkControl();
+  });
+
   const handleLinkUrlConfirm = useLastCallback(() => {
     const formattedLinkUrl = (ensureProtocol(linkUrl) || '').split('%').map(encodeURI).join('%');
 
@@ -389,8 +416,15 @@ const TextFormatter: FC<OwnProps> = ({
         return;
       }
 
-      (element as HTMLAnchorElement).href = formattedLinkUrl;
-
+      if (formattedLinkUrl.trim() === '') {
+        element.replaceWith(...element.childNodes);
+        setSelectedTextFormats((selectedFormats) => ({
+          ...selectedFormats,
+          link: false,
+        }));
+      } else {
+        (element as HTMLAnchorElement).href = formattedLinkUrl;
+      }
       onClose();
 
       return;
@@ -536,7 +570,12 @@ const TextFormatter: FC<OwnProps> = ({
           <Icon name="quote" />
         </Button>
         <div className="TextFormatter-divider" />
-        <Button color="translucent" ariaLabel={lang('TextFormat.AddLinkTitle')} onClick={openLinkControl}>
+        <Button
+          color="translucent"
+          ariaLabel={lang('TextFormat.AddLinkTitle')}
+          className={getFormatButtonClassName('link')}
+          onClick={handleLinkText}
+        >
           <Icon name="link" />
         </Button>
       </div>

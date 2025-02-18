@@ -31,12 +31,16 @@ export default class HistoryManager {
   }
 
   reset() {
-    this.history = [];
-    this.historyIndex = -1;
+    log('reset');
+    this.history = [this.generateHistoryItem()];
+    this.historyIndex = 0;
   }
 
   updateCursor() {
     this.logHistory('before updateCursor');
+
+    if (!this.current) return;
+
     this.current.cursor = saveCursorPosition2(this.el);
 
     // if (this.historyIndex >= 0 && this.el.textContent === this.textContent) {
@@ -66,9 +70,8 @@ export default class HistoryManager {
       return;
     }
 
-    this.history[this.historyIndex] = this.generateHistoryItem();
-
     this.modified = this.current.html !== this.el.innerHTML;
+    this.history[this.historyIndex] = this.generateHistoryItem();
 
     if (this.historyIndex < this.history.length - 1) {
       //this.history = this.history.slice(0, this.historyIndex + 1);
@@ -79,10 +82,13 @@ export default class HistoryManager {
     this.logHistory('before saveState');
 
     const historyObject = this.generateHistoryItem();
-
     this.history = this.history.slice(0, this.historyIndex + 1);
-    this.history.push(historyObject);
-    this.historyIndex++;
+    if (historyObject.html === this.current.html) {
+      this.updateCursor();
+    } else {
+      this.history.push(historyObject);
+      this.historyIndex++;
+    }
     this.modified = false;
     this.logHistory('after saveState');
   }
@@ -111,9 +117,13 @@ export default class HistoryManager {
   undo() {
     log('undo', 'index:', this.historyIndex, ', history.length:', this.history.length);
 
-    if (this.modified) {
-      this.restoreState();
-      return;
+    // if (this.modified) {
+    //   this.restoreState();
+    //   return;
+    // }
+
+    if (this.current.html !== this.el.innerHTML) {
+      this.saveState();
     }
 
     if (this.historyIndex > 0) {
