@@ -240,7 +240,7 @@ const LeftMainHeader: FC<OwnProps & StateProps> = ({
   return (
     <div className="LeftMainHeader">
       <div id="LeftMainHeader" className="left-header" ref={headerRef}>
-        {(foldersTabsView === 'top' || !hasMenu || isMobile) && (<MainButton onTrigger={onMainMenuTrigger} isOpen={isMainMenuOpen} />)}
+        {(<MainButton onTrigger={onMainMenuTrigger} isOpen={isMainMenuOpen} />)}
         <SearchInput
           inputId="telegram-search-input"
           resultsItemSelector=".LeftSearch .ListItem-button"

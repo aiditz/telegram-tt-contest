@@ -1,7 +1,7 @@
 import type {
   ChangeEvent, FormEvent, RefObject,
 } from 'react';
-import type { FC, TeactNode } from '../../../../lib/teact/teact';
+import { FC, TeactNode, useCallback } from '../../../../lib/teact/teact';
 import React from '../../../../lib/teact/teact';
 
 import buildClassName from '../../../../util/buildClassName';
@@ -81,6 +81,11 @@ const FolderNameInput: FC<OwnProps> = ({
   );
   const { isMobile } = useAppLayout();
 
+  const onEmojiSelect = useCallback((e) => {
+    closeSymbolMenu();
+    onEmoticonChange(e);
+  }, [onEmoticonChange]);
+
   const getEmojiBubbleLayout = useLastCallback(() => {
     return {
       withPortal: true,
@@ -127,8 +132,8 @@ const FolderNameInput: FC<OwnProps> = ({
         isSymbolMenuOpen={isSymbolMenuOpen}
         openSymbolMenu={openSymbolMenu}
         closeSymbolMenu={closeSymbolMenu}
-        onCustomEmojiSelect={onEmoticonChange}
-        onEmojiSelect={onEmoticonChange}
+        onCustomEmojiSelect={onEmojiSelect}
+        onEmojiSelect={onEmojiSelect}
         positionY="top"
         positionX="right"
         isAttachmentModal={!isMobile}

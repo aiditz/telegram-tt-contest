@@ -48,6 +48,10 @@
   }
 }
 
+#LeftMainHeader > button {
+  transition: max-width ease-out 0.15s;
+  overflow: hidden;
+}
 
 .ChatFoldersTabs {
   display: flex;
@@ -100,6 +104,16 @@
   .ChatFoldersColumn {
     max-width: 5rem;
   }
+  .LeftColumn--folders-left #LeftMainHeader {
+    > button:not(:has(.state-back)) {
+      max-width: 0;
+      padding: 0;
+
+      + .SearchInput {
+        margin-left: 0;
+      }
+    }
+  }
 }
 
 @media (max-width: 925px) {
@@ -109,6 +123,9 @@
   }
   .ChatFoldersTabs--view-top {
     display: flex !important;
+  }
+  #LeftMainHeader > button {
+    max-width: 40px;
   }
 }
 
