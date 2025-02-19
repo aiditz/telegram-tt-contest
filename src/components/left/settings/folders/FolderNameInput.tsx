@@ -14,6 +14,7 @@ import useFlag from '../../../../hooks/useFlag';
 import type { ApiSticker } from '../../../../api/types';
 import useAppLayout from '../../../../hooks/useAppLayout';
 import FolderIcon from '../../../ui/FolderIcon';
+import useLastCallback from '../../../../hooks/useLastCallback';
 
 type OwnProps = {
   ref?: RefObject<HTMLInputElement>;
@@ -80,6 +81,14 @@ const FolderNameInput: FC<OwnProps> = ({
   );
   const { isMobile } = useAppLayout();
 
+  const getEmojiBubbleLayout = useLastCallback(() => {
+    return {
+      withPortal: true,
+      topShiftY: -64,
+      extraTopPadding: 40,
+    };
+  });
+
   return (
     <div
       className={buildClassName('FolderNameInput', fullClassName)}
@@ -127,6 +136,7 @@ const FolderNameInput: FC<OwnProps> = ({
         idPrefix="folderEmoticon"
         forceDarkTheme={false}
         icon={<FolderIcon emoticon={emoticon} />}
+        getLayout={getEmojiBubbleLayout}
       />
     </div>
   );
