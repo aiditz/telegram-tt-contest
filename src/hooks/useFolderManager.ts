@@ -55,7 +55,9 @@ export function useDisplayedFolders() {
   const allChatsFolder: ApiChatFolder = useMemo(() => {
     return {
       id: ALL_FOLDER_ID,
-      title: { text: orderedFolderIds?.[0] === ALL_FOLDER_ID && foldersTabsView === 'top' ? lang('FilterAllChatsShort') : lang('FilterAllChats') },
+      title: {
+        text: orderedFolderIds?.[0] === ALL_FOLDER_ID && foldersTabsView === 'top' ? lang('FilterAllChatsShort') : lang('FilterAllChats'),
+      },
       includedChatIds: MEMO_EMPTY_ARRAY,
       excludedChatIds: MEMO_EMPTY_ARRAY,
     } satisfies ApiChatFolder;

@@ -1,28 +1,26 @@
 import type {
   ChangeEvent, FormEvent, RefObject,
 } from 'react';
-import type { FC } from '../../lib/teact/teact';
-import React, { memo } from '../../lib/teact/teact';
+import type { FC, TeactNode } from '../../../../lib/teact/teact';
+import React from '../../../../lib/teact/teact';
 
-import buildClassName from '../../util/buildClassName';
+import buildClassName from '../../../../util/buildClassName';
 
-import useOldLang from '../../hooks/useOldLang';
-import Button from './Button';
-import Icon from '../common/icons/Icon';
+import useOldLang from '../../../../hooks/useOldLang';
 
 import './FolderNameInput.scss';
-import SymbolMenuButton from '../middle/composer/SymbolMenuButton';
-import useFlag from '../../hooks/useFlag';
-import type { ApiSticker } from '../../api/types';
-import useAppLayout from '../../hooks/useAppLayout';
-import FolderIcon from './FolderIcon';
+import SymbolMenuButton from '../../../middle/composer/SymbolMenuButton';
+import useFlag from '../../../../hooks/useFlag';
+import type { ApiSticker } from '../../../../api/types';
+import useAppLayout from '../../../../hooks/useAppLayout';
+import FolderIcon from '../../../ui/FolderIcon';
 
 type OwnProps = {
   ref?: RefObject<HTMLInputElement>;
   id?: string;
   className?: string;
   value?: string;
-  emoticon?: string;
+  emoticon?: TeactNode;
   label?: string;
   error?: string;
   success?: string;

@@ -1,15 +1,12 @@
-import type {
-  FC, RefObject,
-} from '../../../lib/teact/teact';
-import React, {
-  memo, useEffect, useMemo, useRef,
-} from '../../../lib/teact/teact';
+import type { FC, RefObject, TeactNode } from '../../../lib/teact/teact';
+import React, { memo, useEffect, useMemo, useRef } from '../../../lib/teact/teact';
 import { getActions, getGlobal, withGlobal } from '../../../global';
 
-import type { ApiChatFolder, ApiChatlistExportedInvite } from '../../../api/types';
+import { ApiChatFolder, ApiChatlistExportedInvite, ApiMessageEntityTypes } from '../../../api/types';
 import type { ISettings } from '../../../types';
 import type { MenuItemContextAction } from '../../ui/ListItem';
 import type { TabWithProperties } from '../../ui/TabList';
+import TabList from '../../ui/TabList';
 
 import { ALL_FOLDER_ID } from '../../../config';
 import { selectCanShareFolder, selectTabState } from '../../../global/selectors';
@@ -25,8 +22,6 @@ import useHistoryBack from '../../../hooks/useHistoryBack';
 import useLang from '../../../hooks/useLang';
 import useLastCallback from '../../../hooks/useLastCallback';
 import useShowTransition from '../../../hooks/useShowTransition';
-
-import TabList from '../../ui/TabList';
 import FolderIcon from '../../ui/FolderIcon';
 import './ChatFoldersTabs.scss';
 
@@ -153,16 +148,31 @@ const ChatFoldersTabs: FC<OwnProps & StateProps> = ({
         });
       }
 
+      let emoticon: TeactNode;
+
+      if (title.entities?.length === 1 && title.entities[0].type === ApiMessageEntityTypes.CustomEmoji) {
+        emoticon = renderTextWithEntities({
+          text: title.text,
+          entities: title.entities,
+          isSimple: true,
+          emojiSize: 32,
+        });
+        if (Array.isArray(emoticon)) {
+          emoticon = emoticon[0];
+        }
+      } else {
+        emoticon = <FolderIcon folderId={folder.id} emoticon={folder.emoticon} />;
+      }
+
       return {
         id,
         title: renderTextWithEntities({
           text: title.text,
-          entities: title.entities,
-          noCustomEmojiPlayback: folder.noTitleAnimations,
+          entities: [],
         }),
         badgeCount: folderCountersById[id]?.chatsCount,
         isBadgeActive: Boolean(folderCountersById[id]?.notificationsCount),
-        emoticon: (<FolderIcon folderId={folder.id} emoticon={folder.emoticon} />),
+        emoticon,
         isBlocked,
         contextActions: contextActions?.length ? contextActions : undefined,
       } satisfies TabWithProperties;

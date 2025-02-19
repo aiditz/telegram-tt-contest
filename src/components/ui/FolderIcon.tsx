@@ -1,19 +1,22 @@
 import type { FC, TeactNode } from '../../lib/teact/teact';
 import React, { memo } from '../../lib/teact/teact';
 
-import type { ApiChatFolder } from '../../api/types';
 import { ALL_FOLDER_ID } from '../../config';
 import renderText from '../common/helpers/renderText';
 
 type OwnProps = {
   folderId?: number;
-  emoticon?: string;
+  emoticon?: string | TeactNode;
 };
 
 const FolderIcon: FC<OwnProps> = ({
   folderId,
   emoticon,
 }) => {
+  if (emoticon && typeof emoticon !== 'string') {
+    return emoticon;
+  }
+
   const botSvg = (
     <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
@@ -143,10 +146,10 @@ const FolderIcon: FC<OwnProps> = ({
     '👤': userSvg,
   };
 
-  const emoticonDef = folderId === ALL_FOLDER_ID ? '💬' : emoticon;
+  let emoticonDef = folderId === ALL_FOLDER_ID ? '💬' : emoticon;
 
   if (!emoticonDef) {
-    return undefined;
+    emoticonDef = '📁';
   }
 
   const svg = EMOTICON_TO_SVG[emoticonDef || '📁'];

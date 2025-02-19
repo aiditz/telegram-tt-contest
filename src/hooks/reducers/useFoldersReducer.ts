@@ -1,6 +1,6 @@
 import { getGlobal } from '../../global';
 
-import type { ApiChatFolder } from '../../api/types';
+import { ApiChatFolder, ApiMessageEntityTypes } from '../../api/types';
 import type { IconName } from '../../types/icons';
 import type { Dispatch, StateReducer } from '../useReducer';
 
@@ -116,7 +116,7 @@ export type FoldersState = {
 export type FoldersActions = (
   'setTitle' | 'saveFilters' | 'editFolder' | 'reset' | 'setChatFilter' | 'setIsLoading' | 'setError' |
   'editIncludeFilters' | 'editExcludeFilters' | 'setIncludeFilters' | 'setExcludeFilters' | 'setIsTouched' |
-  'setFolderId' | 'setIsChatlist' | 'setEmoticon'
+  'setFolderId' | 'setIsChatlist' | 'setEmoticon' | 'setCustomEmoji'
   );
 export type FolderEditDispatch = Dispatch<FoldersState, FoldersActions>;
 
@@ -141,7 +141,10 @@ const foldersReducer: StateReducer<FoldersState, FoldersActions> = (
         ...state,
         folder: {
           ...state.folder,
-          title: { text: action.payload },
+          title: {
+            ...state.folder.title,
+            text: action.payload,
+          },
         },
         isTouched: true,
       };
@@ -151,6 +154,28 @@ const foldersReducer: StateReducer<FoldersState, FoldersActions> = (
         folder: {
           ...state.folder,
           emoticon: action.payload,
+          title: {
+            ...state.folder.title,
+            entities: [],
+          },
+        },
+        isTouched: true,
+      };
+    case 'setCustomEmoji':
+      return {
+        ...state,
+        folder: {
+          ...state.folder,
+          emoticon: action.payload.emoji,
+          title: {
+            ...state.folder.title,
+            entities: [{
+              type: ApiMessageEntityTypes.CustomEmoji,
+              offset: 0,
+              length: 1,
+              documentId: action.payload.documentId.toString(),
+            }],
+          },
         },
         isTouched: true,
       };
