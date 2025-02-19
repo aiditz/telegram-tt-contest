@@ -168,11 +168,11 @@ const foldersReducer: StateReducer<FoldersState, FoldersActions> = (
           ...state.folder,
           emoticon: action.payload.emoji,
           title: {
-            ...state.folder.title,
+            text: action.payload.emoji,
             entities: [{
               type: ApiMessageEntityTypes.CustomEmoji,
               offset: 0,
-              length: 1,
+              length: 2,
               documentId: action.payload.documentId.toString(),
             }],
           },
