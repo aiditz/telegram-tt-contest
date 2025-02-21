@@ -38,3 +38,10 @@
     box-shadow: 0 0 1px rgba(255, 255, 255, 0.01);
   }
 }
+
+html.theme-dark .TabList {
+  &--view-left {
+    background-color: #141414;
+    color: var(--primary-color);
+  }
+}

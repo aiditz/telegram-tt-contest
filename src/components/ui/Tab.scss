@@ -116,7 +116,7 @@
 
 .TabList--view-left .Tab {
   position: relative;
-  --active-color: rgb(91, 153, 238);
+  --active-color: var(--accent-color);
   width: 100%;
   border-top-left-radius: 0;
   border-top-right-radius: 0;

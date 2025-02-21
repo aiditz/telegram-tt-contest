@@ -44,7 +44,7 @@ import { MAIN_THREAD_ID } from '../../api/types';
 
 import {
   BASE_EMOJI_KEYWORD_LANG,
-  DEFAULT_MAX_MESSAGE_LENGTH,
+  DEFAULT_MAX_MESSAGE_LENGTH, EDITABLE_INPUT_MODAL_CSS_SELECTOR,
   EDITABLE_INPUT_MODAL_ID,
   HEART_REACTION,
   MAX_UPLOAD_FILEPART_SIZE,
@@ -924,8 +924,11 @@ const Composer: FC<OwnProps & StateProps> = ({
     return true;
   });
 
-  const getTextFromScratch = useLastCallback(() => {
-    const messageInput = document.querySelector<HTMLElement>(editableInputCssSelector);
+  const getTextFromScratch = useLastCallback((cssSelector: string | undefined = undefined) => {
+    if (!cssSelector) {
+      cssSelector = editableInputCssSelector;
+    }
+    const messageInput = document.querySelector<HTMLElement>(cssSelector);
     if (!messageInput) return { text: '', entities: [] };
 
     const textPrepared = messageInput.getHtmlForSending();
@@ -953,7 +956,7 @@ const Composer: FC<OwnProps & StateProps> = ({
       return;
     }
 
-    const { text, entities } = getTextFromScratch();
+    const { text, entities } = getTextFromScratch(EDITABLE_INPUT_MODAL_CSS_SELECTOR);
     if (!text && !attachmentsToSend.length) {
       return;
     }
