@@ -20,30 +20,40 @@ export function saveCursorPosition2(container) {
   if (!selection.rangeCount) return null;
 
   const range = selection.getRangeAt(0);
-  const nodePath = getNodePath(container, range.endContainer);
+  const nodePathStart = getNodePath(container, range.startContainer);
+  const nodePathEnd = getNodePath(container, range.endContainer);
 
-  if (!nodePath) {
+  if (!nodePathStart) {
     return {
       isTextNode: true,
+      startOffset: 0,
       endOffset: 0,
+      startContainer: container,
       endContainer: container,
-      nodePath: [],
+      nodePathStart: [],
+      nodePathEnd: [],
     };
   }
 
   if (range.endContainer.nodeType === Node.TEXT_NODE) {
     return {
       isTextNode: true,
+      startOffset: range.startOffset,
       endOffset: range.endOffset,
+      startContainer: range.startContainer,
       endContainer: range.endContainer,
-      nodePath,
+      nodePathStart,
+      nodePathEnd,
     };
   } else {
     return {
       isTextNode: false,
+      startOffset: range.startOffset,
       endOffset: range.endOffset,
+      startContainer: range.startContainer,
       endContainer: range.endContainer,
-      nodePath,
+      nodePathStart,
+      nodePathEnd,
     };
   }
 }
@@ -53,14 +63,18 @@ export function restoreCursorPosition2(root, posObj) {
 
   const selection = window.getSelection();
 
-  const el = getNodeAtPath(root, posObj.nodePath);
-  if (!el) return;
+  const elStart = getNodeAtPath(root, posObj.nodePathStart);
+  const elEnd = getNodeAtPath(root, posObj.nodePathEnd);
+  if (!elStart) return;
+  if (!elEnd) return;
 
   const range = document.createRange();
   try {
-    range.setStart(el, posObj.endOffset);
+    range.setStart(elStart, posObj.startOffset);
+    range.setEnd(elEnd, posObj.endOffset);
   } catch (e) {
-    range.setStartAfter(el);
+    range.setStartAfter(elStart);
+    range.setEndBefore(elEnd);
   }
   selection.removeAllRanges();
   selection.addRange(range);

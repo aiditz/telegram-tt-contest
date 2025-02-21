@@ -1033,7 +1033,6 @@ const Composer: FC<OwnProps & StateProps> = ({
 
     let currentAttachments = attachments;
 
-
     if (activeVoiceRecording) {
       const record = await stopRecordingVoice();
       const ttlSeconds = isViewOnceEnabled ? ONE_TIME_MEDIA_TTL_SECONDS : undefined;
