@@ -22,7 +22,7 @@ import useAppLayout from '../hooks/useAppLayout';
 import useFlag from '../hooks/useFlag';
 import usePreviousDeprecated from '../hooks/usePreviousDeprecated';
 
-import '../../_contest/task1-editor/FromScratch';
+import '../_contest-editor-from-scratch/FromScratch';
 
 // import Test from './test/TestLocale';
 import Auth from './auth/Auth';

@@ -24,7 +24,7 @@ import Icon from '../../common/icons/Icon';
 import Button from '../../ui/Button';
 
 import './TextFormatter.scss';
-import { getClosestParentFromCursor } from '../../../../_contest/task1-editor/helpers';
+import { getClosestParentFromCursor } from '../../../_contest-editor-from-scratch/helpers';
 
 export type OwnProps = {
   isOpen: boolean;
