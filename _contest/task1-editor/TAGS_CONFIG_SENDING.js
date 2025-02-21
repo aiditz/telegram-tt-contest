@@ -40,6 +40,11 @@ export default {
     allowedAttributes: [],
     requiredAttributes: [],
   },
+  ins: {
+    removeIfEmpty: true,
+    allowedAttributes: [],
+    requiredAttributes: [],
+  },
   code: {
     removeIfEmpty: true,
     allowedChildTags: ['img'],

@@ -3,48 +3,54 @@ import { getPrettyCodeLanguageName } from '../../src/util/prettyCodeLanguageName
 
 export default {
   b: {
-    allowedChildTags: ['i', 's', 'em', 'strike', 'del', 'u', 'br', 'img', 'span'],
+    allowedChildTags: ['i', 's', 'em', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   strong: {
-    allowedChildTags: ['i', 's', 'em', 'strike', 'del', 'u', 'br', 'img', 'span'],
+    allowedChildTags: ['i', 's', 'em', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   i: {
-    allowedChildTags: ['b', 's', 'strong', 'strike', 'del', 'u', 'br', 'img', 'span'],
+    allowedChildTags: ['b', 's', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   em: {
-    allowedChildTags: ['b', 's', 'strong', 'strike', 'del', 'u', 'br', 'img', 'span'],
+    allowedChildTags: ['b', 's', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   s: {
-    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'br', 'img', 'span'],
+    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   strike: {
-    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'br', 'img', 'span'],
+    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   del: {
-    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'br', 'img', 'span'],
+    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   u: {
+    allowedChildTags: ['b', 'i', 's', 'strong', 'em', 'strike', 'del', 'br', 'img', 'span'],
+    removeIfEmpty: true,
+    allowedAttributes: [],
+    requiredAttributes: [],
+  },
+  ins: {
     allowedChildTags: ['b', 'i', 's', 'strong', 'em', 'strike', 'del', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
@@ -126,7 +132,7 @@ export default {
   },
   blockquote: {
     removeIfEmpty: true,
-    allowedChildTags: ['b', 'i', 's', 'em', 'strong', 'strike', 'del', 'u', 'br', 'img', 'span', 'div', 'pre'],
+    allowedChildTags: ['b', 'i', 's', 'em', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span', 'div', 'pre'],
     allowedAttributes: ['class', 'data-entity-type'],
     requiredAttributes: [],
   },
