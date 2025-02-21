@@ -28,7 +28,7 @@ class Node {
         return `<code>${this.content}</code>`;
       case 'pre':
         return this.content.startsWith('language:')
-          ? `<pre language="${this.content.slice(9)}">${this.children.map(child => child.toString()).join('')}</pre>`
+          ? `<pre data-language="${this.content.slice(9)}" language="${this.content.slice(9)}">${this.children.map(child => child.toString()).join('')}</pre>`
           : `<pre>${this.children
             .map(child => child.toString())
             .join('')}</pre>`;

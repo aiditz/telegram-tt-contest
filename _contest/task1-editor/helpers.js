@@ -142,9 +142,18 @@ function hasTextBefore(parentNode, node) {
 }
 
 export function getNodeIndex(parent, child) {
+  if (parent === child) {
+    return -1;
+  }
+
   let directChild = child;
+
   while (directChild.parentElement !== parent) {
     directChild = directChild.parentElement;
+
+    if (!directChild) {
+      return -1;
+    }
   }
 
   for (let i = 0; i < parent.childNodes.length; i++) {
@@ -201,21 +210,12 @@ function getLastChildDeep(node) {
   return getLastChildDeep(lastChild);
 }
 
-export function getCursorInsideBlock(rootElement, blockTags) {
-  const selection = window.getSelection();
-  if (!selection.rangeCount) return false;
-
-  const range = selection.getRangeAt(0);
-  if (!range.collapsed) return false; // Проверяем, что курсор свёрнут
-
-}
-
 export function getClosestParentFromCursor(parentSelector, stopSelector = '') {
   const selection = window.getSelection();
   if (!selection.rangeCount) return;
 
   const range = selection.getRangeAt(0);
-  if (!range.collapsed) return;
+  //if (!range.collapsed) return;
 
   let parentElement = range.startContainer;
 

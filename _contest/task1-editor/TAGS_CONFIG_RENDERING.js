@@ -1,47 +1,51 @@
 import { getChildTextNodes, styleStringToObject } from './helpers.js';
-//import { getPrettyCodeLanguageName } from '../../src/util/prettyCodeLanguageNames';
-
-function getPrettyCodeLanguageName(s) {
-  return s;
-}
+import { getPrettyCodeLanguageName } from '../../src/util/prettyCodeLanguageNames';
 
 export default {
   b: {
+    allowedChildTags: ['i', 's', 'em', 'strike', 'del', 'u', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   strong: {
+    allowedChildTags: ['i', 's', 'em', 'strike', 'del', 'u', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   i: {
+    allowedChildTags: ['b', 's', 'strong', 'strike', 'del', 'u', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   em: {
+    allowedChildTags: ['b', 's', 'strong', 'strike', 'del', 'u', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   s: {
+    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   strike: {
+    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   del: {
+    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   u: {
+    allowedChildTags: ['b', 'i', 's', 'strong', 'em', 'strike', 'del', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
@@ -56,7 +60,7 @@ export default {
   // },
   code: {
     removeIfEmpty: true,
-    allowedChildTags: ['img'],
+    allowedChildTags: ['img', 'span'],
     allowedAttributes: ['class', 'dir'],
     requiredAttributes: [],
     validateAttribute: {
@@ -69,7 +73,7 @@ export default {
     },
   },
   pre: {
-    allowedChildTags: ['br', 'img'],
+    allowedChildTags: ['br', 'img', 'span'],
     allowedAttributes: ['language', 'data-language', 'class', 'data-entity-type', 'dir'],
     requiredAttributes: [],
     validateAttribute: {
@@ -122,12 +126,12 @@ export default {
   },
   blockquote: {
     removeIfEmpty: true,
-    allowedChildTags: ['b', 'i', 's', 'em', 'strong', 'strike', 'del', 'u', 'br', 'img', 'span'],
+    allowedChildTags: ['b', 'i', 's', 'em', 'strong', 'strike', 'del', 'u', 'br', 'img', 'span', 'div', 'pre'],
     allowedAttributes: ['class', 'data-entity-type'],
     requiredAttributes: [],
   },
   div: {
-    removeIfEmpty: true,
+    removeIfEmpty: false,
     allowedAttributes: ['class'],
     requiredAttributes: [],
     replaceFunction: (node) => {

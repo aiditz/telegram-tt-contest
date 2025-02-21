@@ -1,42 +1,27 @@
 import type { FC } from '../../../lib/teact/teact';
 import React, {
-  memo, useEffect, useMemo, useRef,
+  memo, useEffect, useRef,
 } from '../../../lib/teact/teact';
-import { getActions, getGlobal, withGlobal } from '../../../global';
+import { getActions, withGlobal } from '../../../global';
 
 import type { ApiChatFolder, ApiChatlistExportedInvite, ApiSession } from '../../../api/types';
 import type { GlobalState } from '../../../global/types';
 import type { FolderEditDispatch } from '../../../hooks/reducers/useFoldersReducer';
-import type { ISettings, LeftColumnContent, SettingsScreens } from '../../../types';
-import type { MenuItemContextAction } from '../../ui/ListItem';
-import type { TabWithProperties } from '../../ui/TabList';
+import type { LeftColumnContent, SettingsScreens } from '../../../types';
 
 import { ALL_FOLDER_ID } from '../../../config';
-import { selectCanShareFolder, selectTabState } from '../../../global/selectors';
-import { selectCurrentLimit } from '../../../global/selectors/limits';
+import { selectTabState } from '../../../global/selectors';
 import buildClassName from '../../../util/buildClassName';
-import captureEscKeyListener from '../../../util/captureEscKeyListener';
-import { captureEvents, SwipeDirection } from '../../../util/captureEvents';
-import { MEMO_EMPTY_ARRAY } from '../../../util/memo';
-import { IS_TOUCH_ENV } from '../../../util/windowEnvironment';
-import { renderTextWithEntities } from '../../common/helpers/renderTextWithEntities';
 
 import useDerivedState from '../../../hooks/useDerivedState';
-import { useDisplayedFolders, useFolderManagerForUnreadCounters } from '../../../hooks/useFolderManager';
-import useHistoryBack from '../../../hooks/useHistoryBack';
+import { useDisplayedFolders } from '../../../hooks/useFolderManager';
 import useLang from '../../../hooks/useLang';
-import useLastCallback from '../../../hooks/useLastCallback';
 import useShowTransition from '../../../hooks/useShowTransition';
 
 import StoryRibbon from '../../story/StoryRibbon';
-import TabList from '../../ui/TabList';
 import Transition from '../../ui/Transition';
 import ChatList from './ChatList';
-import renderText from '../../common/helpers/renderText';
-import FolderIcon from '../../ui/FolderIcon';
-import Chat from './Chat';
 import ChatFoldersTabs from './ChatFoldersTabs';
-import useAppLayout from '../../../hooks/useAppLayout';
 
 type OwnProps = {
   onSettingsScreenSelect: (screen: SettingsScreens) => void;
@@ -58,7 +43,6 @@ type StateProps = {
   sessions?: Record<string, ApiSession>;
 };
 
-const SAVED_MESSAGES_HOTKEY = '0';
 const FIRST_FOLDER_INDEX = 0;
 
 const ChatFolders: FC<OwnProps & StateProps> = ({

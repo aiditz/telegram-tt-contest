@@ -15,6 +15,7 @@ import type { ApiSticker } from '../../../../api/types';
 import useAppLayout from '../../../../hooks/useAppLayout';
 import FolderIcon from '../../../ui/FolderIcon';
 import useLastCallback from '../../../../hooks/useLastCallback';
+import FolderEmoticonPickerButton from '../../../ui/folderEmoticonPicker/FolderEmoticonPickerButton';
 
 type OwnProps = {
   ref?: RefObject<HTMLInputElement>;
@@ -126,7 +127,7 @@ const FolderNameInput: FC<OwnProps> = ({
         <label htmlFor={id}>{labelText}</label>
       )}
 
-      <SymbolMenuButton
+      <FolderEmoticonPickerButton
         isMobile={isMobile}
         isReady
         isSymbolMenuOpen={isSymbolMenuOpen}

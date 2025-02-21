@@ -24,6 +24,7 @@ import Icon from '../../common/icons/Icon';
 import Button from '../../ui/Button';
 
 import './TextFormatter.scss';
+import { getClosestParentFromCursor } from '../../../../_contest/task1-editor/helpers';
 
 export type OwnProps = {
   isOpen: boolean;
@@ -203,13 +204,13 @@ const TextFormatter: FC<OwnProps> = ({
       return 'active';
     }
 
-    if (key === 'monospace' || key === 'strikethrough') {
+    if (key === 'monospace') {
       if (Object.keys(selectedTextFormats).some(
         (fKey) => fKey !== key && Boolean(selectedTextFormats[fKey as keyof ISelectedTextFormats]),
       )) {
         return 'disabled';
       }
-    } else if (selectedTextFormats.monospace || selectedTextFormats.strikethrough) {
+    } else if (selectedTextFormats.monospace) {
       return 'disabled';
     }
 
@@ -222,7 +223,7 @@ const TextFormatter: FC<OwnProps> = ({
       if (
         !selectedRange
         || !element
-        || element.dataset.entityType !== ApiMessageEntityTypes.Spoiler
+        || element.dataset?.entityType !== ApiMessageEntityTypes.Spoiler
         || !element.textContent
       ) {
         return;
@@ -249,7 +250,7 @@ const TextFormatter: FC<OwnProps> = ({
       // Somehow re-applying 'bold' command to already bold text doesn't work
       document.execCommand(selectedFormats.bold ? 'removeFormat' : 'bold');
       Object.keys(selectedFormats).forEach((key) => {
-        if ((key === 'italic' || key === 'underline') && Boolean(selectedFormats[key])) {
+        if ((key === 'italic' || key === 'underline' || key === 'strikethrough') && Boolean(selectedFormats[key])) {
           document.execCommand(key);
         }
       });
@@ -286,7 +287,7 @@ const TextFormatter: FC<OwnProps> = ({
       if (
         !selectedRange
         || !element
-        || element.tagName !== 'DEL'
+        || (element.tagName !== 'DEL' && element.tagName !== 'STRIKE' && element.tagName !== 'S')
         || !element.textContent
       ) {
         return;
@@ -312,12 +313,12 @@ const TextFormatter: FC<OwnProps> = ({
     if (!selection || !selection.focusNode) return;
     if (selection.rangeCount === 0) return;
 
-    selection?.getRangeAt(0).deleteContents();
+    selection.getRangeAt(0).deleteContents();
     const tempDiv = document.createElement('DIV');
     tempDiv.innerHTML = html;
     const tempFragment = document.createDocumentFragment();
     tempFragment.append(...tempDiv.childNodes);
-    selection?.getRangeAt(0).insertNode(tempFragment);
+    selection.getRangeAt(0).insertNode(tempFragment);
 
     selection.focusNode.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
   });
@@ -358,7 +359,7 @@ const TextFormatter: FC<OwnProps> = ({
 
   const handleQuoteText = useLastCallback(() => {
     if (selectedTextFormats.quote) {
-      const element = getSelectedElement();
+      const element = getClosestParentFromCursor('blockquote', 'from-scratch');
       if (
         !selectedRange
         || !element

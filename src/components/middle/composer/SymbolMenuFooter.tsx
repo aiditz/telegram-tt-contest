@@ -13,7 +13,7 @@ type OwnProps = {
   activeTab: SymbolMenuTabs;
   onSwitchTab: (tab: SymbolMenuTabs) => void;
   onRemoveSymbol?: () => void;
-  onSearchOpen: (type: 'stickers' | 'gifs') => void;
+  onSearchOpen?: (type: 'stickers' | 'gifs') => void;
   isAttachmentModal?: boolean;
   canSendPlainText?: boolean;
   canSearch?: boolean;
@@ -63,7 +63,9 @@ const SymbolMenuFooter: FC<OwnProps> = ({
   }
 
   const handleSearchOpen = useLastCallback(() => {
-    onSearchOpen(activeTab === SymbolMenuTabs.Stickers ? 'stickers' : 'gifs');
+    if (canSearch) {
+      onSearchOpen(activeTab === SymbolMenuTabs.Stickers ? 'stickers' : 'gifs');
+    }
   });
 
   function stopPropagation(event: any) {

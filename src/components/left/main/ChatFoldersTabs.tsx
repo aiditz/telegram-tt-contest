@@ -149,6 +149,7 @@ const ChatFoldersTabs: FC<OwnProps & StateProps> = ({
       }
 
       let emoticon: TeactNode;
+      let textWithoutCustomEmoji = title.text;
 
       if (title.entities?.length === 1 && title.entities[0].type === ApiMessageEntityTypes.CustomEmoji) {
         emoticon = renderTextWithEntities({
@@ -160,6 +161,7 @@ const ChatFoldersTabs: FC<OwnProps & StateProps> = ({
         if (Array.isArray(emoticon)) {
           emoticon = emoticon[0];
         }
+        textWithoutCustomEmoji = textWithoutCustomEmoji.slice(2);
       } else {
         emoticon = <FolderIcon folderId={folder.id} emoticon={folder.emoticon} />;
       }
@@ -167,7 +169,7 @@ const ChatFoldersTabs: FC<OwnProps & StateProps> = ({
       return {
         id,
         title: renderTextWithEntities({
-          text: title.text,
+          text: textWithoutCustomEmoji,
           entities: [],
         }),
         badgeCount: folderCountersById[id]?.chatsCount,

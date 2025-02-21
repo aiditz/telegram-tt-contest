@@ -54,10 +54,16 @@ export default class HistoryManager {
   }
 
   generateHistoryItem() {
+    function trim(s) {
+      if (/^<br *\/?>$/i.test(s)) return '';
+
+      return s;
+    }
+
     return {
       cursor: saveCursorPosition2(this.el),
       nodes: Array.from(this.el.childNodes).map(node => node.cloneNode(true)),
-      html: this.el.innerHTML,
+      html: trim(this.el.innerHTML),
       textContent: this.el.textContent,
     };
   }
@@ -84,7 +90,7 @@ export default class HistoryManager {
     const historyObject = this.generateHistoryItem();
     this.history = this.history.slice(0, this.historyIndex + 1);
     if (historyObject.html === this.current.html) {
-      this.updateCursor();
+      this.history[this.historyIndex] = historyObject;
     } else {
       this.history.push(historyObject);
       this.historyIndex++;

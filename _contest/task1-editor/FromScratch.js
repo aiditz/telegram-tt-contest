@@ -3,7 +3,7 @@ import * as helpers from './helpers.js';
 import {
   getClosestParentFromCursor, getNodeIndex,
   removeCopiedGarbage,
-  saveCursorPosition, setCaretAfter,
+  saveCursorPosition, setCaretAfter, setCaretAfterNodeIndex,
   setCaretBefore,
 } from './helpers.js';
 import { sanitizeRichDOM, sanitizeRichHtml } from './sanitizeRichHtml.js';
@@ -43,7 +43,15 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     this.addEventListener('paste', this.handlePaste);
     this.addEventListener('keydown', this.handleKeyDown);
     this.addEventListener('beforeinput', (e) => {
-      //this.history.updateCursor();
+      log('beforeinput', e);
+      if (e.inputType.startsWith('insert')) {
+        const selection = window.getSelection();
+        if (!selection.isCollapsed) {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          this.history.saveState();
+        }
+      }
     });
     this.addEventListener('click', (e) => {
       this.history.saveState();
@@ -56,28 +64,7 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
         log('-----mutation detected but disabled', mutations);
         return;
       }
-
-      let needSaveHistory;
-
-      mutations.forEach((mutation) => {
-        log('-----mutation type:', mutation.type, mutation);
-        if (false && mutation.type === 'childList') {
-          mutation.addedNodes.forEach((node) => {
-            this.disableObserver = true;
-            // console.log('-----mutation bef:', this.outerHTML);
-            const {
-              isDomModified,
-            } = sanitizeRichDOM(node, TAGS_CONFIG_RENDERING, { includeRoot: true });
-            // console.log('-----mutation aft:', this.outerHTML);
-
-            if (isDomModified) {
-              needSaveHistory = true;
-            }
-
-            this.disableObserver = false;
-          });
-        }
-      });
+      log('-----mutation detected', mutations);
 
       const isDomModified = mutations.some((mutation) => {
         return Array.from(mutation.addedNodes)
@@ -131,17 +118,13 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
       this.history.saveState();
     }
 
-    if (e.key === 'Delete') {
-      if (this.firstChild?.tagName === 'BR') {
-        this.firstChild.remove();
-        e.preventDefault();
-      }
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      //this.history.saveState();
     }
 
     if (e.key === 'ArrowUp' || e.key === 'Backspace') {
-      const blockSelector = 'pre, blockquote, div:has(pre, blockquote)';
-      const parentBlock = getClosestParentFromCursor(blockSelector, 'from-scratch');
-      this.normalize();
+      const blockSelector = 'div:has(pre, blockquote), blockquote';
+      let parentBlock = getClosestParentFromCursor(blockSelector, 'from-scratch');
       const isFirstChildBlock = this.firstChild?.nodeType === Node.ELEMENT_NODE && this.firstChild.matches(blockSelector);
       const cursorGlobal = saveCursorPosition(this);
 
@@ -152,21 +135,32 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
         this.disableObserver = true;
         this.prepend(br);
         this.disableObserver = false;
-      } else if (parentBlock) {
+      } else { // if (parentBlock) {
+        this.normalize();
+        if (!parentBlock) {
+          parentBlock = this;
+        }
         const cursor = saveCursorPosition(parentBlock);
 
-        if (cursor.startOffset === 0) {
+        if (cursor.startOffset === 0 && cursor.endOffset === 0) {
           if (e.key === 'Backspace') {
             const codeNodeIndex = getNodeIndex(this, parentBlock);
             if (codeNodeIndex === 1 && this.firstChild?.tagName === 'BR') {
               this.firstChild.remove();
               e.preventDefault();
             } else if (codeNodeIndex > 0) {
-              const prevNode = this.childNodes[codeNodeIndex - 1];
+              const prevNode = parentBlock.previousSibling;
+
+              if (prevNode.nodeType === Node.TEXT_NODE) {
+                if (prevNode.textContent.endsWith('\n')) {
+                  prevNode.textContent = prevNode.textContent.slice(0, prevNode.textContent.length - 1);
+                }
+              }
+
               if (prevNode?.tagName === 'BR' && codeNodeIndex >= 2) {
                 setCaretBefore(prevNode);
               } else {
-                setCaretAfter(prevNode);
+                setCaretBefore(parentBlock);
               }
               e.preventDefault();
             }
@@ -226,9 +220,10 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     text = parseMarkdownToHtml(text, { processOnlyTags: ['```'] });
     text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: true });
     //super.innerHTML = '';
+    this.history.updateCurrent();
     super.innerHTML = text;
-    this.history.reset();
-    this.history.saveState();
+    //this.history.saveState();
+    //this.history.reset();
   }
 
   get innerHTML() {
@@ -237,6 +232,12 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
 
   // Обработчик вставки из буфера
   handlePaste(e) {
+    if (e.clipboardData.files?.length > 0) {
+
+      log('handlePaste');
+      return;
+    }
+
     const clipboardData = e.clipboardData || window.clipboardData;
     let html = clipboardData.getData('text/html');
 
@@ -289,7 +290,7 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     log('sanitizeMyself');
 
     if (cursorPosition) {
-      helpers.restoreCursorPosition2(this, cursorPosition);
+      //helpers.restoreCursorPosition2(this, cursorPosition);
     }
   }
 
