@@ -1,4 +1,3 @@
-import { getChildTextNodes } from './helpers.js';
 
 export default {
   b: {
@@ -60,8 +59,9 @@ export default {
     replaceFunction: (node) => {
       if (node.dataset.language) {
         node.setAttribute('language', node.dataset.language);
+      } else if (node.getAttribute('language')) {
+        node.dataset.language = node.getAttribute('language');
       }
-
       return node;
     },
   },

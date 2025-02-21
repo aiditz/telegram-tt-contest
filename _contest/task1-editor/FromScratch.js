@@ -257,7 +257,7 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     }
 
     if (!hasPre && md !== htmlSanitized) {
-      if (confirm('Proceed as markdown?')) {
+      if (confirm('Parse markdown before pasting?')) {
         this.insertHtmlAtCursor(md);
       } else {
         this.insertHtmlAtCursor(html);
