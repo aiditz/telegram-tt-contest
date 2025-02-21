@@ -126,33 +126,10 @@ export function restoreCursorPosition(container, {
     selection.removeAllRanges();
     selection.addRange(range);
   } catch (e) {
-    // Fallback to end of content
     range.selectNodeContents(container);
     range.collapse(false);
     selection.addRange(range);
   }
-}
-
-function hasTextBefore(parentNode, node) {
-  if (!parentNode || !node.parentNode || node === parentNode) {
-    return false;
-  }
-
-  for (const childNode of node.parentNode.childNodes) {
-    if (childNode === node) {
-      return false;
-    }
-
-    if (childNode.nodeType === Node.TEXT_NODE) {
-      return true;
-    }
-
-    if (childNode.tagName === 'BR') {
-      return true;
-    }
-  }
-
-  return hasTextBefore(node.parentNode);
 }
 
 export function getNodeIndex(parent, child) {
@@ -258,46 +235,6 @@ export function removeCopiedGarbage(s) {
   return s;
 }
 
-export function isCursorAtEndOfParentTag(parentTagSelector) {
-  // 1. Получаем текущее выделение
-  const selection = window.getSelection();
-  if (!selection.rangeCount) return false;
-
-  const range = selection.getRangeAt(0);
-  if (!range.collapsed) return false; // Проверяем, что курсор свёрнут
-
-  // 2. Находим ближайший родительский элемент с указанным тегом
-  let parentElement;
-
-  if (range.startContainer instanceof Element) {
-    if (range.startContainer.matches(parentTagSelector)) {
-      parentElement = range.startContainer;
-    }
-  }
-
-  if (!parentElement) {
-    parentElement = range.startContainer.parentElement.closest(parentTagSelector);
-  }
-
-  if (!parentElement) return false;
-
-  const lastChild1 = getLastChildDeep(parentElement);
-  const lastChild2 = getLastChildDeep(selection.focusNode);
-
-  return lastChild1 === selection.focusNode || lastChild1 === lastChild2;
-
-  // 3. Создаём временный диапазон для измерения
-  const tempRange = document.createRange();
-  tempRange.selectNodeContents(parentElement);
-  tempRange.setEnd(range.startContainer, range.startOffset);
-
-  // 4. Сравниваем позицию курсора с общей длиной текста
-  const cursorPosition = tempRange.toString().length;
-  const totalTextLength = parentElement.textContent.length;
-
-  return cursorPosition === totalTextLength;
-}
-
 export function arraysIntersection(array1, array2) {
   if (!array1) {
     return array2;
@@ -341,239 +278,25 @@ export function getNodeAtPath(root, path) {
   return getNodeAtPath(root.childNodes[path[0]], path.slice(1));
 }
 
-function getCaret(element) {
-  const sel = window.getSelection();
-  if (!sel.rangeCount) return 0;
-  const range = sel.getRangeAt(0);
-  let chars = 0;
-  let found = false;
-
-  function traverse(node) {
-    if (found) return;
-
-    // If this is the node where the caret begins…
-    if (node === range.startContainer) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        // Add only part of the text node.
-        chars += range.startOffset;
-      } else {
-        // Element node: the caret is between childNodes.
-        // So we count the full length of all childNodes before the offset.
-        for (let i = 0; i < range.startOffset; i++) {
-          traverse(node.childNodes[i]);
-          if (found) return;
-        }
-      }
-      found = true;
-      return;
-    }
-
-    // For text nodes, simply add its content’s length.
-    if (node.nodeType === Node.TEXT_NODE) {
-      chars += node.textContent.length;
-    }
-    // For element nodes…
-    else if (node.nodeType === Node.ELEMENT_NODE) {
-      // If it is a BR tag, count it as one char.
-      if (node.tagName === "BR") {
-        chars += 1;
-      } else {
-        // Otherwise we iterate over its children.
-        for (let i = 0; i < node.childNodes.length; i++) {
-          traverse(node.childNodes[i]);
-          if (found) return;
-        }
-      }
-    }
-  }
-
-  traverse(element);
-  return chars;
-}
-
-function setCaret(element, caretPosition) {
-  const range = document.createRange();
-  const sel = window.getSelection();
-  let currentChars = 0;
-  let found = false;
-
-  function traverse(node) {
-    if (found) return;
-
-    if (node.nodeType === Node.TEXT_NODE) {
-      const nodeTextLength = node.textContent.length;
-      // If the caret should be inside this text node…
-      if (currentChars + nodeTextLength >= caretPosition) {
-        range.setStart(node, caretPosition - currentChars);
-        found = true;
-        return;
-      } else {
-        currentChars += nodeTextLength;
-      }
-    }
-    else if (node.nodeType === Node.ELEMENT_NODE) {
-      // If the node is a <br>, count it as a single character.
-      if (node.tagName === "BR") {
-        if (currentChars + 1 >= caretPosition) {
-          // For a <br>, we can’t set the caret “inside” the element,
-          // so we place it right after the <br> in its parent.
-          const parent = node.parentNode;
-          const nodeIndex = Array.prototype.indexOf.call(parent.childNodes, node);
-          range.setStart(parent, nodeIndex + 1);
-          found = true;
-          return;
-        } else {
-          currentChars += 1;
-        }
-      } else {
-        // For normal element nodes, iterate over children.
-        for (let i = 0; i < node.childNodes.length; i++) {
-          traverse(node.childNodes[i]);
-          if (found) return;
-        }
-      }
-    }
-  }
-
-  traverse(element);
-
-  // If we haven’t found a position, put the caret at the very end.
-  if (!found) {
-    range.selectNodeContents(element);
-    range.collapse(false);
-  }
-
-  // Finally, update the selection.
-  sel.removeAllRanges();
-  sel.addRange(range);
-}
-
-export function moveCursorToEndOfPreviousLine(editableDiv) {
-  const selection = window.getSelection();
-  if (!selection.rangeCount) return;
-
-  const originalRange = selection.getRangeAt(0).cloneRange();
-  const originalRect = originalRange.getBoundingClientRect();
-
-  if (originalRect.top === 0 && originalRect.height === 0) return;
-
-  let currentRange = originalRange.cloneRange();
-  let previousLineFound = false;
-  let lastGoodPosition = null;
-
-  // Ищем позицию в предыдущей строке
-  while (true) {
-    const currentRect = currentRange.getBoundingClientRect();
-
-    if (currentRect.top < originalRect.top) {
-      previousLineFound = true;
-      lastGoodPosition = {
-        node: currentRange.endContainer,
-        offset: currentRange.endOffset
-      };
-      break;
-    }
-
-    if (!moveCursorBackward(currentRange)) break;
-  }
-
-  if (!previousLineFound) return;
-
-  // Ищем конец предыдущей строки
-  let maxOffset = lastGoodPosition.offset;
-  let maxNode = lastGoodPosition.node;
-  const targetTop = currentRange.getBoundingClientRect().top;
-
-  while (true) {
-    if (!moveCursorForward(currentRange)) break;
-
-    const rect = currentRange.getBoundingClientRect();
-    if (rect.top > targetTop || rect.top === 0) break;
-
-    if (rect.top === targetTop) {
-      maxNode = currentRange.endContainer;
-      maxOffset = currentRange.endOffset;
-    }
-  }
-
-  // Устанавливаем курсор в конец предыдущей строки
-  const newRange = document.createRange();
-  newRange.setStart(maxNode, maxOffset);
-  newRange.collapse(true);
-
-  selection.removeAllRanges();
-  selection.addRange(newRange);
-  editableDiv.focus();
-
-
-  function moveCursorBackward(range) {
-    if (range.endOffset > 0) {
-      range.setEnd(range.endContainer, range.endOffset - 1);
-      return true;
-    }
-
-    let node = range.endContainer;
-    while (node) {
-      if (node.previousSibling) {
-        node = node.previousSibling;
-        while (node.lastChild) node = node.lastChild;
-        range.setEnd(node, node.textContent.length);
-        return true;
-      }
-
-      node = node.parentNode;
-      if (node === editableDiv) break;
-    }
-    return false;
-  }
-
-  function moveCursorForward(range) {
-    const node = range.endContainer;
-    if (range.endOffset < node.textContent.length) {
-      range.setEnd(node, range.endOffset + 1);
-      return true;
-    }
-
-    let nextNode = node;
-    while (nextNode) {
-      if (nextNode.nextSibling) {
-        nextNode = nextNode.nextSibling;
-        while (nextNode.firstChild) nextNode = nextNode.firstChild;
-        range.setEnd(nextNode, 0);
-        return true;
-      }
-
-      nextNode = nextNode.parentNode;
-      if (nextNode === editableDiv) break;
-    }
-    return false;
-  }
-
-}
-
 export function styleStringToObject(styleString) {
   const styleObject = {};
 
-  // Helper function to tokenize the style string by top-level semicolons.
   function tokenizeDeclarations(str) {
     let tokens = [];
     let currentToken = '';
-    let inQuote = null; // can be either ' or "
+    let inQuote = null;
     let parenDepth = 0;
 
     for (let i = 0; i < str.length; i++) {
       const char = str[i];
 
-      // Check for entering or exiting quotes
       if (inQuote) {
         currentToken += char;
         if (char === inQuote) {
-          // End of quoted part (not taking escape characters into account)
           inQuote = null;
         }
       } else {
         if (char === "'" || char === '"') {
-          // Start of quoted part
           inQuote = char;
           currentToken += char;
         } else if (char === '(') {
@@ -583,7 +306,6 @@ export function styleStringToObject(styleString) {
           parenDepth = Math.max(parenDepth - 1, 0);
           currentToken += char;
         } else if (char === ';' && parenDepth === 0) {
-          // End of a top-level declaration, trim and store it if non-empty.
           if (currentToken.trim().length > 0) {
             tokens.push(currentToken.trim());
           }
@@ -594,7 +316,6 @@ export function styleStringToObject(styleString) {
       }
     }
 
-    // Add last token if there is any
     if (currentToken.trim().length > 0) {
       tokens.push(currentToken.trim());
     }
@@ -602,7 +323,6 @@ export function styleStringToObject(styleString) {
     return tokens;
   }
 
-  // Helper function to split a declaration into property and value.
   function splitDeclaration(decl) {
     let property = '';
     let value = '';
@@ -610,7 +330,6 @@ export function styleStringToObject(styleString) {
     let parenDepth = 0;
     let colonIndex = -1;
 
-    // Find the first colon that is not inside quotes or parentheses.
     for (let i = 0; i < decl.length; i++) {
       const char = decl[i];
       if (inQuote) {
@@ -639,10 +358,8 @@ export function styleStringToObject(styleString) {
     return { property, value };
   }
 
-  // Tokenize the declarations (splitting on top-level semicolons)
   const declarations = tokenizeDeclarations(styleString);
 
-  // Process each declaration and add to the result object.
   declarations.forEach(decl => {
     const { property, value } = splitDeclaration(decl);
     if (property) {

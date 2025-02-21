@@ -9,8 +9,6 @@ import {
 import { sanitizeRichDOM, sanitizeRichHtml } from './sanitizeRichHtml.js';
 import HistoryManager from './HistoryManager.js';
 
-//import './FromScratch.css';
-
 import TAGS_CONFIG_RENDERING from './TAGS_CONFIG_RENDERING.js';
 import TAGS_CONFIG_SENDING from './TAGS_CONFIG_SENDING.js';
 
@@ -230,7 +228,6 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     return super.innerHTML;
   }
 
-  // Обработчик вставки из буфера
   handlePaste(e) {
     if (e.clipboardData.files?.length > 0) {
 
@@ -270,17 +267,6 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     e.stopPropagation();
 
     log('handlePaste', html);
-    return;
-
-    // html = removeCopiedGarbage(html);
-    // html = parseMarkdownToHtml(html);
-    //
-    //
-    // e.preventDefault();
-    //
-    // this.history.saveState();
-    // this.insertHtmlAtCursor(html);
-    // this.history.saveState();
   }
 
   sanitizeMyself() {
@@ -311,15 +297,6 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     range.insertNode(fragment);
     range.collapse(false);
     this.sanitizeMyself();
-
-    // const newRange = document.createRange();
-    // newRange.setStartAfter(range.endContainer);
-    // newRange.collapse(false);
-    //
-    // selection.removeAllRanges();
-    // selection.addRange(newRange);
-
-    //this.history.saveState();
   }
 
   dispatchInputEvent() {
