@@ -183,4 +183,17 @@ export default {
     allowedAttributes: [],
     requiredAttributes: [],
   },
+  p: {
+    allowedAttributes: [],
+    requiredAttributes: [],
+    replaceFunction: (node) => {
+      const fragment = document.createDocumentFragment();
+      Array.from(node.childNodes).forEach(child => fragment.appendChild(child));
+      const brCount = node.parentElement?.lastChild === node ? 1 : 2;
+      for (let i = 0; i < brCount; i++) {
+        fragment.appendChild(document.createElement('BR'));
+      }
+      return fragment;
+    },
+  },
 };
