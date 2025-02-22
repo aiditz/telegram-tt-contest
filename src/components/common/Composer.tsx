@@ -1228,10 +1228,6 @@ const Composer: FC<OwnProps & StateProps> = ({
     }
   });
 
-  useEffect(() => {
-    inputRef?.current?.history?.reset();
-  }, [editingMessage, chatId, threadId]);
-
   const handleStickerSelect = useLastCallback((
     sticker: ApiSticker,
     isSilent?: boolean,

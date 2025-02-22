@@ -18,6 +18,10 @@ export default class HistoryManager {
     this.el = editableElement;
   }
 
+  get length() {
+    return this.history.length;
+  }
+
   logHistory(s) {
     log(s, '| index/length/items =', this.historyIndex, this.history.length, this.history);
   }
@@ -32,8 +36,8 @@ export default class HistoryManager {
 
   reset() {
     log('reset');
-    this.history = [this.generateHistoryItem()];
-    this.historyIndex = 0;
+    this.history = [];
+    this.historyIndex = -1;
   }
 
   updateCursor() {
@@ -68,6 +72,10 @@ export default class HistoryManager {
     };
   }
 
+  get currentHtml() {
+    return this.current?.html || '';
+  }
+
   updateCurrent() {
     this.logHistory('updateCurrent');
 
@@ -76,7 +84,7 @@ export default class HistoryManager {
       return;
     }
 
-    this.modified = this.current.html !== this.el.innerHTML;
+    this.modified = this.currentHtml !== this.el.innerHTML;
     this.history[this.historyIndex] = this.generateHistoryItem();
 
     if (this.historyIndex < this.history.length - 1) {
@@ -89,7 +97,7 @@ export default class HistoryManager {
 
     const historyObject = this.generateHistoryItem();
     this.history = this.history.slice(0, this.historyIndex + 1);
-    if (historyObject.html === this.current.html) {
+    if (historyObject.html === this.currentHtml && this.length > 0) {
       this.history[this.historyIndex] = historyObject;
     } else {
       this.history.push(historyObject);
@@ -106,7 +114,7 @@ export default class HistoryManager {
       return;
     }
 
-    const { cursor, caret, html, nodes } = this.current;
+    const { cursor, nodes } = this.current;
 
     this.el.disableObserver = true;
     this.el.replaceChildren(...Array.from(nodes).map(node => node.cloneNode(true)));
@@ -128,7 +136,7 @@ export default class HistoryManager {
     //   return;
     // }
 
-    if (this.current.html !== this.el.innerHTML) {
+    if (this.currentHtml !== this.el.innerHTML) {
       this.saveState();
     }
 

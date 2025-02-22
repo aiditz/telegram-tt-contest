@@ -113,6 +113,7 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     log('connectedCallback');
     this.sanitizeMyself();
     this.history.reset();
+    this.history.saveState();
 
     document.addEventListener('selectionchange', this.handleSelectionChange);
     this.addEventListener('input', this.handleInput);
@@ -174,11 +175,20 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
 
   handleClick(e) {
     log('handleClick');
-    this.history.saveState();
+    this.history.updateCursor();
   }
 
   handleBeforeInput(e) {
     log('handleBeforeInput', e.inputType);
+
+    if (this.history.length === 0) {
+      this.history.saveState();
+    }
+
+    if (e.inputType.startsWith('format')) {
+      this.history.saveState();
+    }
+
     if (e.inputType.startsWith('insert')) {
       const selection = window.getSelection();
       if (!selection.isCollapsed) {
@@ -309,17 +319,17 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     //}
   }
 
-  set innerHTML(text) {
-    log('set innerHTML', text);
-    text = text.replace(/<br *\/?>/gi, '\n');
+  set innerHTML(html) {
+    log('set innerHTML', html);
+    let text = html.replace(/<br *\/?>/gi, '\n');
     text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: false });
     text = parseMarkdownToHtml(text, { processOnlyTags: ['```'] });
     text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: true });
     //super.innerHTML = '';
-    this.history.updateCurrent();
+
+    this.history.reset();
     super.innerHTML = text;
-    //this.history.saveState();
-    //this.history.reset();
+    this.history.saveState();
   }
 
   get innerHTML() {
@@ -328,9 +338,11 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
 
   handlePaste(e) {
     if (e.clipboardData.files?.length > 0) {
-      log('handlePaste');
+      log('handlePaste files');
       return;
     }
+
+    this.history.updateCursor();
 
     const clipboardData = e.clipboardData || window.clipboardData;
     let html = clipboardData.getData('text/html');
@@ -360,6 +372,7 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
       this.insertHtmlAtCursor(html);
     }
 
+    this.history.saveState();
     e.preventDefault();
     e.stopPropagation();
 
