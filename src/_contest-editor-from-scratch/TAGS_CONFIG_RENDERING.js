@@ -4,75 +4,79 @@ import { getPrettyCodeLanguageName } from '../../src/util/prettyCodeLanguageName
 export default {
   b: {
     formattingAlias: 'bold',
-    allowedChildTags: ['i', 's', 'em', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span'],
+    allowedChildTags: ['i', 's', 'em', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span', 'blockquote', 'code'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   strong: {
     formattingAlias: 'bold',
-    allowedChildTags: ['i', 's', 'em', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span'],
+    allowedChildTags: ['i', 's', 'em', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span', 'blockquote', 'code'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   i: {
     formattingAlias: 'italic',
-    allowedChildTags: ['b', 's', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span'],
+    allowedChildTags: ['b', 's', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span', 'blockquote', 'code'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   em: {
     formattingAlias: 'italic',
-    allowedChildTags: ['b', 's', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span'],
+    allowedChildTags: ['b', 's', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span', 'blockquote', 'code'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   s: {
-    formattingAlias: 'strikethrough',
-    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'ins', 'br', 'img', 'span'],
+    formattingAlias: 'strikeThrough',
+    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'ins', 'br', 'img', 'span', 'blockquote', 'code'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   strike: {
-    formattingAlias: 'strikethrough',
-    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'ins', 'br', 'img', 'span'],
+    formattingAlias: 'strikeThrough',
+    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'ins', 'br', 'img', 'span', 'blockquote', 'code'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   del: {
-    formattingAlias: 'strikethrough',
-    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'ins', 'br', 'img', 'span'],
+    formattingAlias: 'strikeThrough',
+    allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'ins', 'br', 'img', 'span', 'blockquote', 'code'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   u: {
     formattingAlias: 'underline',
-    allowedChildTags: ['b', 'i', 's', 'strong', 'em', 'strike', 'del', 'br', 'img', 'span'],
+    allowedChildTags: ['b', 'i', 's', 'strong', 'em', 'strike', 'del', 'br', 'img', 'span', 'blockquote', 'code'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   ins: {
     formattingAlias: 'underline',
-    allowedChildTags: ['b', 'i', 's', 'strong', 'em', 'strike', 'del', 'br', 'img', 'span'],
+    allowedChildTags: ['b', 'i', 's', 'strong', 'em', 'strike', 'del', 'br', 'img', 'span', 'blockquote', 'code'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
-  // p: {
-  //   removeIfEmpty: true,
-  //   allowedAttributes: ['class', 'contenteditable'],
-  //   requiredAttributes: ['class'],
-  //   validateAttribute: {
-  //     class: (value) => value === 'code-title',
-  //   },
-  // },
+  a: {
+    formattingAlias: 'link',
+    removeIfEmpty: true,
+    //allowedChildTags: [],
+    allowedAttributes: ['href', 'class', 'dir', 'data-entity-type'],
+    requiredAttributes: ['href'],
+    replaceFunction: (node) => {
+      node.className = 'text-entity-link';
+      node.setAttribute('dir', 'auto');
+      return node;
+    },
+  },
   code: {
     formattingAlias: 'monospace',
     removeIfEmpty: true,
@@ -130,22 +134,10 @@ export default {
         .every((value) => ['emoji', 'emoji-small', 'custom-emoji-placeholder'].includes(value)),
     },
   },
-  a: {
-    formattingAlias: 'link',
-    removeIfEmpty: true,
-    //allowedChildTags: [],
-    allowedAttributes: ['href', 'class', 'dir'],
-    requiredAttributes: ['href'],
-    replaceFunction: (node) => {
-      node.className = 'text-entity-link';
-      node.setAttribute('dir', 'auto');
-      return node;
-    },
-  },
   blockquote: {
     formattingAlias: 'quote',
     removeIfEmpty: true,
-    allowedChildTags: ['b', 'i', 's', 'em', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span', 'div', 'pre'],
+    allowedChildTags: ['b', 'i', 's', 'em', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span', 'div', 'pre', 'a'],
     allowedAttributes: ['class', 'data-entity-type'],
     requiredAttributes: [],
   },

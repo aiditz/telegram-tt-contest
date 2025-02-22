@@ -19,6 +19,8 @@ function log(...args) {
 
 log('module load');
 
+let formattingCounter = 1;
+
 export default class FromScratch extends HTMLElement { // Safari does not support extending existing tags but it's ok
   disableObserver = false;
 
@@ -33,21 +35,6 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
   constructor() {
     log('constructor');
     super();
-  }
-
-  applyFormatting(alias) {
-    const selection = window.getSelection();
-
-    if (!selection || selection.rangeCount === 0) {
-      return false;
-    }
-    const range = selection.getRangeAt(0);
-
-    if (!range) {
-      return false;
-    }
-
-
   }
 
   get activeFormattingTags() {
@@ -244,19 +231,19 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
         if (cursor.startOffset === 0 && cursor.endOffset === 0) {
           if (e.key === 'Backspace') {
             const codeNodeIndex = getNodeIndex(this, parentBlock);
-            if (codeNodeIndex === 1 && this.firstChild?.tagName === 'BR') {
+            if (codeNodeIndex === 1 && (this.firstChild?.tagName === 'BR' || this.firstChild?.textContent.endsWith('\n'))) {
               this.firstChild.remove();
               e.preventDefault();
             } else if (codeNodeIndex > 0) {
               const prevNode = parentBlock.previousSibling;
 
-              if (prevNode.nodeType === Node.TEXT_NODE) {
+              if (prevNode?.nodeType === Node.TEXT_NODE) {
                 if (prevNode.textContent.endsWith('\n')) {
                   prevNode.textContent = prevNode.textContent.slice(0, prevNode.textContent.length - 1);
                 }
               }
 
-              if (prevNode?.tagName === 'BR' && codeNodeIndex >= 2) {
+              if ((prevNode?.tagName === 'BR' || prevNode?.textContent.endsWith('\n')) && codeNodeIndex >= 2) {
                 setCaretBefore(prevNode);
               } else {
                 setCaretBefore(parentBlock);
@@ -276,11 +263,21 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
         this.normalize();
         const isLastChildBlock = this.lastChild?.nodeType === Node.ELEMENT_NODE && this.lastChild.matches(blockSelector);
         const cursorGlobal = saveCursorPosition(this);
-        const isNeedInsertNewline = cursorGlobal.startOffset >= this.textContent.length && isLastChildBlock;
+
+        let offset = cursorGlobal.startOffset;
+
+        const lastNode = parentBlock.lastChild;
+        if (lastNode.nodeType === Node.TEXT_NODE) {
+          if (lastNode.textContent.endsWith('\n')) {
+            offset++;
+          }
+        }
+
+        const isNeedInsertNewline = offset >= this.textContent.length && isLastChildBlock;
 
         if (isNeedInsertNewline) {
           this.disableObserver = true;
-          this.append(document.createElement('br'));
+          this.append(document.createTextNode('\n'));
           this.disableObserver = false;
           this.dispatchInputEvent();
         }
@@ -331,7 +328,6 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
 
   handlePaste(e) {
     if (e.clipboardData.files?.length > 0) {
-
       log('handlePaste');
       return;
     }
@@ -379,6 +375,21 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     if (cursorPosition) {
       //helpers.restoreCursorPosition2(this, cursorPosition);
     }
+  }
+
+  splitInlineTagsAndInsertHtml(fragment) {
+    this.disableObserver = true;
+    const id = 'temp' + Math.random().toString(36).substr(2);
+    document.execCommand(
+      'insertHorizontalRule',
+      false,
+      id,
+    );
+
+    const el = document.querySelector(`hr#${id}`);
+
+    el.replaceWith(fragment);
+    this.disableObserver = false;
   }
 
   insertHtmlAtCursor(html) {

@@ -87,12 +87,12 @@ export default {
   a: {
     removeIfEmpty: true,
     allowedChildTags: [],
-    allowedAttributes: ['href'],
-    requiredAttributes: ['href'],
+    allowedAttributes: ['href', 'class', 'dir', 'data-entity-type'],
+    requiredAttributes: [],
   },
   blockquote: {
     removeIfEmpty: true,
-    allowedChildTags: ['b', 'i', 's', 'em', 'strong', 'strike', 'del', 'u', 'br', 'img', 'span'],
+    allowedChildTags: ['b', 'i', 's', 'em', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span', 'a'],
     allowedAttributes: [],
     requiredAttributes: [],
   },

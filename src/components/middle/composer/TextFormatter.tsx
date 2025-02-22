@@ -31,7 +31,7 @@ export interface ISelectedTextFormats {
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
-  strikethrough?: boolean;
+  strikeThrough?: boolean;
   monospace?: boolean;
   spoiler?: boolean;
   quote?: boolean;
@@ -54,7 +54,7 @@ const TEXT_FORMAT_BY_TAG_NAME: Record<string, keyof ISelectedTextFormats> = {
   I: 'italic',
   EM: 'italic',
   U: 'underline',
-  DEL: 'strikethrough',
+  DEL: 'strikeThrough',
   CODE: 'monospace',
   PRE: 'monospace',
   SPAN: 'spoiler',
@@ -260,7 +260,7 @@ const TextFormatter: FC<OwnProps> = ({
       document.execCommand('removeFormat');
       updateSelectedRange();
       Object.keys(selectedTextFormats).forEach((key) => {
-        if ((key === 'italic' || key === 'underline') && Boolean(selectedTextFormats[key])) {
+        if ((key === 'italic' || key === 'underline' || key === 'strikeThrough') && Boolean(selectedTextFormats[key])) {
           document.execCommand(key);
         }
       });
@@ -281,7 +281,7 @@ const TextFormatter: FC<OwnProps> = ({
     updateSelectedRange();
   });
 
-  const handleStrikethroughText = useLastCallback(() => {
+  const handlestrikeThroughText = useLastCallback(() => {
     document.execCommand('strikeThrough');
     updateSelectedRange();
   });
@@ -405,7 +405,7 @@ const TextFormatter: FC<OwnProps> = ({
     document.execCommand(
       'insertHTML',
       false,
-      `<a href=${formattedLinkUrl} class="text-entity-link" dir="auto">${text}</a>`,
+      `<a href="${formattedLinkUrl}" class="text-entity-link" data-entity-type="MessageEntityTextUrl" dir="auto">${text}</a>`,
     );
     onClose();
   });
@@ -414,10 +414,10 @@ const TextFormatter: FC<OwnProps> = ({
     const HANDLERS_BY_KEY: Record<string, AnyToVoidFunction> = {
       k: openLinkControl,
       b: handleBoldText,
-      u: handleUnderlineText,
-      i: handleItalicText,
+      //u: handleUnderlineText,
+      //i: handleItalicText,
       m: handleMonospaceText,
-      s: handleStrikethroughText,
+      s: handlestrikeThroughText,
       p: handleSpoilerText,
     };
 
@@ -517,9 +517,9 @@ const TextFormatter: FC<OwnProps> = ({
         </Button>
         <Button
           color="translucent"
-          ariaLabel="Strikethrough text"
-          className={getFormatButtonClassName('strikethrough')}
-          onClick={handleStrikethroughText}
+          ariaLabel="strikeThrough text"
+          className={getFormatButtonClassName('strikeThrough')}
+          onClick={handlestrikeThroughText}
         >
           <Icon name="strikethrough" />
         </Button>
