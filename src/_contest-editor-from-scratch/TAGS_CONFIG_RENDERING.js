@@ -1,56 +1,65 @@
 import { getChildTextNodes, styleStringToObject } from './helpers.js';
-import { getPrettyCodeLanguageName } from '../../src/util/prettyCodeLanguageNames';
-
+// import { getPrettyCodeLanguageName } from '../../src/util/prettyCodeLanguageNames';
+function getPrettyCodeLanguageName(s) {return s;}
 export default {
   b: {
+    formattingAlias: 'bold',
     allowedChildTags: ['i', 's', 'em', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   strong: {
+    formattingAlias: 'bold',
     allowedChildTags: ['i', 's', 'em', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   i: {
+    formattingAlias: 'italic',
     allowedChildTags: ['b', 's', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   em: {
+    formattingAlias: 'italic',
     allowedChildTags: ['b', 's', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   s: {
+    formattingAlias: 'strikethrough',
     allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   strike: {
+    formattingAlias: 'strikethrough',
     allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   del: {
+    formattingAlias: 'strikethrough',
     allowedChildTags: ['b', 'i', 'strong', 'em', 'del', 'u', 'ins', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   u: {
+    formattingAlias: 'underline',
     allowedChildTags: ['b', 'i', 's', 'strong', 'em', 'strike', 'del', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
     requiredAttributes: [],
   },
   ins: {
+    formattingAlias: 'underline',
     allowedChildTags: ['b', 'i', 's', 'strong', 'em', 'strike', 'del', 'br', 'img', 'span'],
     removeIfEmpty: true,
     allowedAttributes: [],
@@ -65,6 +74,7 @@ export default {
   //   },
   // },
   code: {
+    formattingAlias: 'monospace',
     removeIfEmpty: true,
     allowedChildTags: ['img', 'span'],
     allowedAttributes: ['class', 'dir'],
@@ -79,6 +89,7 @@ export default {
     },
   },
   pre: {
+    formattingAlias: 'monospace',
     allowedChildTags: ['br', 'img', 'span'],
     allowedAttributes: ['language', 'data-language', 'class', 'data-entity-type', 'dir'],
     requiredAttributes: [],
@@ -120,6 +131,7 @@ export default {
     },
   },
   a: {
+    formattingAlias: 'link',
     removeIfEmpty: true,
     //allowedChildTags: [],
     allowedAttributes: ['href', 'class', 'dir'],
@@ -131,6 +143,7 @@ export default {
     },
   },
   blockquote: {
+    formattingAlias: 'quote',
     removeIfEmpty: true,
     allowedChildTags: ['b', 'i', 's', 'em', 'strong', 'strike', 'del', 'u', 'ins', 'br', 'img', 'span', 'div', 'pre'],
     allowedAttributes: ['class', 'data-entity-type'],
@@ -171,6 +184,7 @@ export default {
     requiredAttributes: [],
   },
   span: {
+    formattingAlias: (node) => node.classList.contains('spoiler') ? 'spoiler' : undefined,
     removeIfEmpty: true,
     allowedAttributes: ['class', 'data-type', 'data-entity-type'],
     requiredAttributes: ['class'],

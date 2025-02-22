@@ -25,16 +25,9 @@ import Button from '../../ui/Button';
 
 import './TextFormatter.scss';
 import { getClosestParentFromCursor } from '../../../_contest-editor-from-scratch/helpers';
+import { requestMutation } from '../../../lib/fasterdom/fasterdom';
 
-export type OwnProps = {
-  isOpen: boolean;
-  anchorPosition?: IAnchorPosition;
-  selectedRange?: Range;
-  setSelectedRange: (range: Range) => void;
-  onClose: () => void;
-};
-
-interface ISelectedTextFormats {
+export interface ISelectedTextFormats {
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
@@ -44,6 +37,15 @@ interface ISelectedTextFormats {
   quote?: boolean;
   link?: boolean;
 }
+
+export type OwnProps = {
+  isOpen: boolean;
+  anchorPosition?: IAnchorPosition;
+  selectedRange?: Range;
+  setSelectedRange: (range: Range) => void;
+  selectedTextFormats: ISelectedTextFormats;
+  onClose: () => void;
+};
 
 const TEXT_FORMAT_BY_TAG_NAME: Record<string, keyof ISelectedTextFormats> = {
   A: 'link',
@@ -65,6 +67,7 @@ const TextFormatter: FC<OwnProps> = ({
   anchorPosition,
   selectedRange,
   setSelectedRange,
+  selectedTextFormats,
   onClose,
 }) => {
   // eslint-disable-next-line no-null/no-null
@@ -76,7 +79,7 @@ const TextFormatter: FC<OwnProps> = ({
   const [linkUrl, setLinkUrl] = useState('');
   const [isEditingLink, setIsEditingLink] = useState(false);
   const [inputClassName, setInputClassName] = useState<string | undefined>();
-  const [selectedTextFormats, setSelectedTextFormats] = useState<ISelectedTextFormats>({});
+  //const [selectedTextFormats, setSelectedTextFormats] = useState<ISelectedTextFormats>({});
 
   const getSelectedElement = useLastCallback(() => {
     if (!selectedRange) {
@@ -109,7 +112,6 @@ const TextFormatter: FC<OwnProps> = ({
   useEffect(() => {
     if (!shouldRender) {
       closeLinkControl();
-      setSelectedTextFormats({});
       setInputClassName(undefined);
     }
   }, [closeLinkControl, shouldRender]);
@@ -131,8 +133,6 @@ const TextFormatter: FC<OwnProps> = ({
 
       parentElement = parentElement.parentElement;
     }
-
-    setSelectedTextFormats(selectedFormats);
   }, [isOpen, selectedRange, openLinkControl]);
 
   const restoreSelection = useLastCallback(() => {
@@ -154,17 +154,32 @@ const TextFormatter: FC<OwnProps> = ({
     }
   });
 
-  const getSelectedFragment = useLastCallback((shouldDropCustomEmoji?: boolean) => {
-    if (!selectedRange) {
+  const getSelectedFragment = useLastCallback((shouldDropCustomEmoji?: boolean, actual?: boolean) => {
+    let range = selectedRange;
+
+    if (actual) {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        return undefined;
+      }
+
+      range = selection.getRangeAt(0);
+    }
+
+    if (!range) {
       return undefined;
     }
-    fragmentEl.replaceChildren(selectedRange.cloneContents());
+    fragmentEl.replaceChildren(range.cloneContents());
     if (shouldDropCustomEmoji) {
       fragmentEl.querySelectorAll(INPUT_CUSTOM_EMOJI_SELECTOR).forEach((el) => {
         el.replaceWith(el.getAttribute('alt')!);
       });
     }
     return fragmentEl;
+  });
+
+  const getActualSelectedText = useLastCallback((shouldDropCustomEmoji?: boolean) => {
+    return getSelectedFragment(shouldDropCustomEmoji, true)?.innerHTML || '';
   });
 
   const getSelectedText = useLastCallback((shouldDropCustomEmoji?: boolean) => {
@@ -230,15 +245,10 @@ const TextFormatter: FC<OwnProps> = ({
       }
 
       element.replaceWith(...element.childNodes);
-      setSelectedTextFormats((selectedFormats) => ({
-        ...selectedFormats,
-        spoiler: false,
-      }));
-
       return;
     }
 
-    const text = getSelectedText();
+    const text = getActualSelectedText();
     document.execCommand(
       'insertHTML', false, `<span class="spoiler" data-entity-type="${ApiMessageEntityTypes.Spoiler}">${text}</span>`,
     );
@@ -246,65 +256,34 @@ const TextFormatter: FC<OwnProps> = ({
   });
 
   const handleBoldText = useLastCallback(() => {
-    setSelectedTextFormats((selectedFormats) => {
-      // Somehow re-applying 'bold' command to already bold text doesn't work
-      document.execCommand(selectedFormats.bold ? 'removeFormat' : 'bold');
-      Object.keys(selectedFormats).forEach((key) => {
-        if ((key === 'italic' || key === 'underline' || key === 'strikethrough') && Boolean(selectedFormats[key])) {
+    if (selectedTextFormats.bold) {
+      document.execCommand('removeFormat');
+      updateSelectedRange();
+      Object.keys(selectedTextFormats).forEach((key) => {
+        if ((key === 'italic' || key === 'underline') && Boolean(selectedTextFormats[key])) {
           document.execCommand(key);
         }
       });
+    } else {
+      document.execCommand('bold');
+    }
 
-      updateSelectedRange();
-      return {
-        ...selectedFormats,
-        bold: !selectedFormats.bold,
-      };
-    });
+    updateSelectedRange();
   });
 
   const handleItalicText = useLastCallback(() => {
     document.execCommand('italic');
     updateSelectedRange();
-    setSelectedTextFormats((selectedFormats) => ({
-      ...selectedFormats,
-      italic: !selectedFormats.italic,
-    }));
   });
 
   const handleUnderlineText = useLastCallback(() => {
     document.execCommand('underline');
     updateSelectedRange();
-    setSelectedTextFormats((selectedFormats) => ({
-      ...selectedFormats,
-      underline: !selectedFormats.underline,
-    }));
   });
 
   const handleStrikethroughText = useLastCallback(() => {
-    if (selectedTextFormats.strikethrough) {
-      const element = getSelectedElement();
-      if (
-        !selectedRange
-        || !element
-        || (element.tagName !== 'DEL' && element.tagName !== 'STRIKE' && element.tagName !== 'S')
-        || !element.textContent
-      ) {
-        return;
-      }
-
-      element.replaceWith(...element.childNodes);
-      setSelectedTextFormats((selectedFormats) => ({
-        ...selectedFormats,
-        strikethrough: false,
-      }));
-
-      return;
-    }
-
-    const text = getSelectedText();
-    insertHTML(`<del>${text}</del>`);
-    onClose();
+    document.execCommand('strikeThrough');
+    updateSelectedRange();
   });
 
   const insertHTML = useLastCallback((html) => {
@@ -340,15 +319,13 @@ const TextFormatter: FC<OwnProps> = ({
       } else {
         element.replaceWith(...element.childNodes);
       }
-      setSelectedTextFormats((selectedFormats) => ({
-        ...selectedFormats,
-        monospace: false,
-      }));
 
       return;
     }
 
-    const text = getSelectedText(true);
+    document.execCommand('removeFormat');
+    updateSelectedRange();
+    const text = getActualSelectedText(true);
     if (/(<br *\/?>|\n\r?)/i.test(text)) {
       insertHTML(`<pre class="code-block">${text}</pre>`);
     } else {
@@ -370,15 +347,13 @@ const TextFormatter: FC<OwnProps> = ({
       }
 
       element.replaceWith(...element.childNodes);
-      setSelectedTextFormats((selectedFormats) => ({
-        ...selectedFormats,
-        quote: false,
-      }));
 
       return;
     }
 
-    const text = getSelectedText();
+    document.execCommand('removeFormat');
+    updateSelectedRange();
+    const text = getActualSelectedText();
     insertHTML(`<blockquote class="blockquote">${text}</blockquote>`);
     onClose();
   });
@@ -398,10 +373,6 @@ const TextFormatter: FC<OwnProps> = ({
       }
 
       element.replaceWith(...element.childNodes);
-      setSelectedTextFormats((selectedFormats) => ({
-        ...selectedFormats,
-        link: false,
-      }));
       return;
     }
 
@@ -419,10 +390,6 @@ const TextFormatter: FC<OwnProps> = ({
 
       if (formattedLinkUrl.trim() === '') {
         element.replaceWith(...element.childNodes);
-        setSelectedTextFormats((selectedFormats) => ({
-          ...selectedFormats,
-          link: false,
-        }));
       } else {
         (element as HTMLAnchorElement).href = formattedLinkUrl;
       }
@@ -431,6 +398,8 @@ const TextFormatter: FC<OwnProps> = ({
       return;
     }
 
+    document.execCommand('removeFormat');
+    updateSelectedRange();
     const text = getSelectedText(true);
     restoreSelection();
     document.execCommand(

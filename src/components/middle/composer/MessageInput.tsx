@@ -37,6 +37,7 @@ import Icon from '../../common/icons/Icon';
 import Button from '../../ui/Button';
 import TextTimer from '../../ui/TextTimer';
 import TextFormatter from './TextFormatter.async';
+import { ISelectedTextFormats } from './TextFormatter';
 
 const CONTEXT_MENU_CLOSE_DELAY_MS = 100;
 // Focus slows down animation, also it breaks transition layout in Chrome
@@ -459,6 +460,28 @@ const MessageInput: FC<OwnProps & StateProps> = ({
     showAllowedMessageTypesNotification({ chatId });
   }
 
+  const [selectedTextFormats, setSelectedTextFormats] = useState<ISelectedTextFormats>({});
+
+  const handleActiveFormattingTagsChange = (e: Event) => {
+    if (!e.target) return;
+
+    const obj: ISelectedTextFormats = {};
+
+    e.target.activeFormattingTags.forEach((tag) => {
+      obj[tag.alias] = true;
+    });
+    setSelectedTextFormats(obj);
+  };
+
+  useEffect(() => {
+    const input = inputRef?.current;
+    input.addEventListener('activeFormattingTagsChange', handleActiveFormattingTagsChange);
+
+    return () => {
+      input.removeEventListener('activeFormattingTagsChange', handleActiveFormattingTagsChange);
+    };
+  }, [inputRef]);
+
   const handleOpenPremiumModal = useLastCallback(() => openPremiumModal());
 
   useEffect(() => {
@@ -635,6 +658,7 @@ const MessageInput: FC<OwnProps & StateProps> = ({
         anchorPosition={textFormatterAnchorPosition}
         selectedRange={selectedRange}
         setSelectedRange={setSelectedRange}
+        selectedTextFormats={selectedTextFormats}
         onClose={handleCloseTextFormatter}
       />
       {forcedPlaceholder && <span className="forced-placeholder">{renderText(forcedPlaceholder!)}</span>}

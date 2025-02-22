@@ -85,8 +85,19 @@
   <script src="./FromScratch.js" type="module"></script>
 </head>
 <body>
-  npm i -g serve && serve
+  <code>npm i -g serve && serve</code>
+  <p>
+    <b>Active formatting:</b> <i id="active-formatting-list"></i>
+  </p>
   <from-scratch contenteditable="true"></from-scratch>
 
+  <script>
+    const editor = document.querySelector('from-scratch');
+
+    editor.addEventListener('activeFormattingTagsChange', e => {
+      const el = document.getElementById('active-formatting-list');
+      el.innerText = editor.activeFormattingTags.map(tag => tag.alias).join(', ');
+    });
+  </script>
 </body>
 </html>

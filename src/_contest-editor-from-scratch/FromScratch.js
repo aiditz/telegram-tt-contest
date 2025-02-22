@@ -1,6 +1,7 @@
 import parseMarkdownToHtml from './markdownToHtml.js';
 import * as helpers from './helpers.js';
 import {
+  arraysIntersection,
   getClosestParentFromCursor, getNodeIndex,
   removeCopiedGarbage,
   saveCursorPosition, setCaretAfter, setCaretAfterNodeIndex,
@@ -23,6 +24,8 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
 
   history = new HistoryManager(this);
 
+  prevActiveFormattingTags = [];
+
   static get observedAttributes() {
     return [''];
   }
@@ -32,37 +35,111 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
     super();
   }
 
+  applyFormatting(alias) {
+    const selection = window.getSelection();
+
+    if (!selection || selection.rangeCount === 0) {
+      return false;
+    }
+    const range = selection.getRangeAt(0);
+
+    if (!range) {
+      return false;
+    }
+
+
+  }
+
+  get activeFormattingTags() {
+    const selection = window.getSelection();
+
+    if (!selection || selection.rangeCount === 0) {
+      return [];
+    }
+    const range = selection.getRangeAt(0);
+
+    if (!range) {
+      return [];
+    }
+
+    const startTags = this.getFormattingTags(range.startContainer);
+    const endTags = this.getFormattingTags(range.endContainer);
+
+    const deeper = startTags.length > endTags ? startTags : endTags;
+    const upper = startTags.length > endTags ? endTags : startTags;
+
+    for (let i = deeper.length - 1; i >= 0; i--) {
+      if (upper.find(tag => tag.element === deeper[i].element)) {
+        return deeper.slice(0, i + 1); // common element
+      }
+    }
+
+    return [];
+  }
+
+  checkActiveFormattingTags() {
+    const newTags = this.activeFormattingTags;
+
+    if (newTags.map(tag => tag.path).join('-') !== this.prevActiveFormattingTags.map(tag => tag.path).join('-')) {
+      this.prevActiveFormattingTags = newTags;
+      this.dispatchEvent(new Event('activeFormattingTagsChange', newTags));
+    }
+  }
+
+  getFormattingTags(element) {
+    const result = [];
+    let path = '';
+
+    while (element) {
+      if (!element.parentElement) {
+        return [];
+      }
+
+      if (element.nodeType === Node.ELEMENT_NODE) {
+        let alias = TAGS_CONFIG_RENDERING[element.tagName.toLowerCase()]?.formattingAlias;
+
+        if (typeof alias === 'function') {
+          alias = alias(element);
+        }
+
+        if (alias) {
+          path = [getNodeIndex(element.parentElement, element).toString(), path].filter(Boolean).join('.');
+          result.push({
+            path,
+            alias,
+            element,
+          });
+        }
+      }
+
+      if (element.parentElement === this) {
+        break;
+      }
+
+      element = element.parentElement;
+    }
+
+    return result.reverse();
+  }
+
   connectedCallback() {
     log('connectedCallback');
     this.sanitizeMyself();
     this.history.reset();
 
+    document.addEventListener('selectionchange', this.handleSelectionChange);
     this.addEventListener('input', this.handleInput);
     this.addEventListener('paste', this.handlePaste);
     this.addEventListener('keydown', this.handleKeyDown);
-    this.addEventListener('beforeinput', (e) => {
-      log('beforeinput', e);
-      if (e.inputType.startsWith('insert')) {
-        const selection = window.getSelection();
-        if (!selection.isCollapsed) {
-          const range = selection.getRangeAt(0);
-          range.deleteContents();
-          this.history.saveState();
-        }
-      }
-    });
-    this.addEventListener('click', (e) => {
-      this.history.saveState();
-    });
+    this.addEventListener('beforeinput', this.handleBeforeInput);
+    this.addEventListener('click', this.handleClick);
 
     let saveStateTimeout;
 
     const observer = new MutationObserver((mutations) => {
       if (this.disableObserver) {
-        log('-----mutation detected but disabled', mutations);
         return;
       }
-      log('-----mutation detected', mutations);
 
       const isDomModified = mutations.some((mutation) => {
         return Array.from(mutation.addedNodes)
@@ -71,8 +148,8 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
 
       this.disableObserver = true;
       this.sanitizeMyself();
-      log('-----mutation sanitizeMyself');
       this.disableObserver = false;
+      this.checkActiveFormattingTags();
       if (isDomModified) {
         this.history.saveState();
       }
@@ -91,18 +168,42 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
 
   disconnectedCallback() {
     log('disconnectedCallback');
+    document.removeEventListener('selectionchange', this.handleSelectionChange);
     this.removeEventListener('input', this.handleInput);
     this.removeEventListener('paste', this.handlePaste);
     this.removeEventListener('keydown', this.handleKeyDown);
+    this.removeEventListener('beforeinput', this.handleBeforeInput);
+    this.removeEventListener('click', this.handleClick);
     // this.removeEventListener('blur', this.handleInput);
   }
 
-  adoptedCallback() {
-    log('disconnectedCallback');
+  // adoptedCallback() {
+  //   log('disconnectedCallback');
+  // }
+  //
+  // attributeChangedCallback(name, oldValue, newValue) {
+  //   log('attributeChangedCallback', name, oldValue, newValue);
+  // }
+
+  handleClick(e) {
+    log('handleClick');
+    this.history.saveState();
   }
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    log('attributeChangedCallback', name, oldValue, newValue);
+  handleBeforeInput(e) {
+    log('handleBeforeInput', e.inputType);
+    if (e.inputType.startsWith('insert')) {
+      const selection = window.getSelection();
+      if (!selection.isCollapsed) {
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        this.history.saveState();
+      }
+    }
+  }
+
+  handleSelectionChange = (e) => {
+    this.checkActiveFormattingTags();
   }
 
   handleKeyDown(e) {
