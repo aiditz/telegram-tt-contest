@@ -16,6 +16,7 @@ import ResponsiveHoverButton from '../ResponsiveHoverButton';
 import Spinner from '../Spinner';
 import FolderEmoticonPickerMenu from './FolderEmoticonPickerMenu';
 import { MenuPositionOptions } from '../../../hooks/useMenuPosition';
+import SymbolMenu from '../../middle/composer/SymbolMenu.async';
 
 type OwnProps = {
   isMobile?: boolean;

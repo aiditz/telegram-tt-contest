@@ -1,12 +1,15 @@
-import { FC, type TeactNode, useMemo } from '../../../lib/teact/teact';
+import type { FC } from '../../../lib/teact/teact';
 import React, {
-  memo, useEffect, useState,
+  memo, useEffect, useLayoutEffect, useRef, useState,
 } from '../../../lib/teact/teact';
 import { withGlobal } from '../../../global';
 
-import type { ApiSticker } from '../../../api/types';
+import type { ApiSticker, ApiVideo } from '../../../api/types';
+import type { GlobalActions } from '../../../global';
+import type { ThreadId } from '../../../types';
 import type { MenuPositionOptions } from '../Menu';
 
+import { requestMutation } from '../../../lib/fasterdom/fasterdom';
 import { selectIsContextMenuTranslucent, selectTabState } from '../../../global/selectors';
 import buildClassName from '../../../util/buildClassName';
 import { IS_TOUCH_ENV } from '../../../util/windowEnvironment';
@@ -19,51 +22,90 @@ import useShowTransitionDeprecated from '../../../hooks/useShowTransitionDepreca
 
 import CustomEmojiPicker from '../../common/CustomEmojiPicker';
 import Icon from '../../common/icons/Icon';
-import EmojiPickerWithExtra from '../../middle/composer/EmojiPickerWithExtra';
-import SymbolMenuFooter, { SymbolMenuTabs } from '../../middle/composer/SymbolMenuFooter';
 import Button from '../Button';
 import Menu from '../Menu';
 import Portal from '../Portal';
 import Transition from '../Transition';
+import SymbolMenuFooter, { SYMBOL_MENU_TAB_TITLES, SymbolMenuTabs } from '../../middle/composer/SymbolMenuFooter';
+
+import EmojiPickerWithExtra from '../../middle/composer/EmojiPickerWithExtra';
 import { EMOTICON_TO_SVG } from './FolderIconEmojis';
-import EmojiButton from '../../middle/composer/EmojiButton';
 
 const ANIMATION_DURATION = 350;
 const STICKERS_TAB_INDEX = 2;
 
 export type OwnProps = {
+  chatId?: string;
+  threadId?: ThreadId;
   isOpen: boolean;
+  canSendStickers?: boolean;
+  canSendGifs?: boolean;
+  isMessageComposer?: boolean;
   idPrefix: string;
   onLoad: () => void;
   onClose: () => void;
   onEmojiSelect: (emoji: string) => void;
   onCustomEmojiSelect: (emoji: ApiSticker) => void;
+  onStickerSelect?: (
+    sticker: ApiSticker,
+    isSilent?: boolean,
+    shouldSchedule?: boolean,
+    shouldPreserveInput?: boolean,
+    canUpdateStickerSetsOrder?: boolean,
+  ) => void;
+  onGifSelect?: (gif: ApiVideo, isSilent?: boolean, shouldSchedule?: boolean) => void;
+  onRemoveSymbol?: () => void;
+  onSearchOpen: (type: 'stickers' | 'gifs') => void;
+  addRecentEmoji: GlobalActions['addRecentEmoji'];
+  addRecentCustomEmoji: GlobalActions['addRecentCustomEmoji'];
   className?: string;
+  isAttachmentModal?: boolean;
+  canSendPlainText?: boolean;
 }
 & MenuPositionOptions;
 
 type StateProps = {
+  isLeftColumnShown: boolean;
   isBackgroundTranslucent?: boolean;
 };
 
 let isActivated = false;
 
 const FolderEmoticonPickerMenu: FC<OwnProps & StateProps> = ({
+  chatId,
+  threadId,
   isOpen,
+  canSendStickers,
+  canSendGifs,
+  isMessageComposer,
+  isLeftColumnShown,
   idPrefix,
+  isAttachmentModal,
+  canSendPlainText,
   className,
   isBackgroundTranslucent,
   onLoad,
   onClose,
   onEmojiSelect,
   onCustomEmojiSelect,
+  onStickerSelect,
+  onGifSelect,
+  onRemoveSymbol,
+  onSearchOpen,
+  addRecentEmoji,
+  addRecentCustomEmoji,
   ...menuPositionOptions
 }) => {
   const [activeTab, setActiveTab] = useState<number>(0);
+  const [recentEmojis, setRecentEmojis] = useState<string[]>([]);
+  const [recentCustomEmojis, setRecentCustomEmojis] = useState<string[]>([]);
   const { isMobile } = useAppLayout();
 
   const [handleMouseEnter, handleMouseLeave] = useMouseInside(isOpen, onClose, undefined, isMobile);
-  const { shouldRender, transitionClassNames } = useShowTransitionDeprecated(isOpen, onClose, false, false);
+  const {
+    shouldRender,
+    transitionClassNames,
+  } = useShowTransitionDeprecated(isOpen, onClose, false, false);
 
   const lang = useOldLang();
 
@@ -75,11 +117,70 @@ const FolderEmoticonPickerMenu: FC<OwnProps & StateProps> = ({
     onLoad();
   }, [onLoad]);
 
+  // If we can't send plain text, we should always show the stickers tab
+  useEffect(() => {
+    if (canSendPlainText) return;
+    setActiveTab(STICKERS_TAB_INDEX);
+  }, [canSendPlainText]);
+
+  useLayoutEffect(() => {
+    if (!isMobile || !isOpen || isAttachmentModal) {
+      return undefined;
+    }
+
+    document.body.classList.add('enable-symbol-menu-transforms');
+    document.body.classList.add('is-symbol-menu-open');
+
+    return () => {
+      document.body.classList.remove('is-symbol-menu-open');
+
+      setTimeout(() => {
+        requestMutation(() => {
+          document.body.classList.remove('enable-symbol-menu-transforms');
+        });
+      }, ANIMATION_DURATION);
+    };
+  }, [isAttachmentModal, isMobile, isOpen]);
+
+  const recentEmojisRef = useRef(recentEmojis);
+  recentEmojisRef.current = recentEmojis;
+  useEffect(() => {
+    if (!recentEmojisRef.current.length || isOpen) {
+      return;
+    }
+
+    recentEmojisRef.current.forEach((name) => {
+      addRecentEmoji({ emoji: name });
+    });
+
+    setRecentEmojis([]);
+  }, [isOpen, addRecentEmoji]);
+
   const handleEmojiSelect = useLastCallback((emoji: string, name: string) => {
+    setRecentEmojis((emojis) => [...emojis, name]);
+
     onEmojiSelect(emoji);
   });
 
+  const recentCustomEmojisRef = useRef(recentCustomEmojis);
+  recentCustomEmojisRef.current = recentCustomEmojis;
+  useEffect(() => {
+    if (!recentCustomEmojisRef.current.length || isOpen) {
+      return;
+    }
+
+    recentCustomEmojisRef.current.forEach((documentId) => {
+      addRecentCustomEmoji({
+        documentId,
+      });
+    });
+
+    setRecentEmojis([]);
+  }, [isOpen, addRecentCustomEmoji]);
+
   const handleCustomEmojiSelect = useLastCallback((emoji: ApiSticker) => {
+    setRecentCustomEmojis((ids) => [...ids, emoji.id]);
+
     onCustomEmojiSelect(emoji);
   });
 
@@ -110,6 +211,7 @@ const FolderEmoticonPickerMenu: FC<OwnProps & StateProps> = ({
             isHidden={!isOpen || !isActive}
             idPrefix={idPrefix}
             loadAndPlay={isOpen && (isActive || isFrom)}
+            chatId={chatId}
             isTranslucent={!isMobile && isBackgroundTranslucent}
             onCustomEmojiSelect={handleCustomEmojiSelect}
           />
@@ -130,7 +232,7 @@ const FolderEmoticonPickerMenu: FC<OwnProps & StateProps> = ({
           <Transition
             name="slide"
             activeKey={activeTab}
-            renderCount={2} // Object.values({}).length}
+            renderCount={2}
           >
             {renderContent}
           </Transition>
@@ -146,14 +248,14 @@ const FolderEmoticonPickerMenu: FC<OwnProps & StateProps> = ({
           size="tiny"
           onClick={onClose}
         >
-          <Icon name="close" />
+          <Icon name="close"/>
         </Button>
       )}
       <SymbolMenuFooter
         activeTab={activeTab}
         onSwitchTab={setActiveTab}
-        canSearch={false}
-        isAttachmentModal
+        //onRemoveSymbol={onRemoveSymbol}
+        isAttachmentModal={true}
         canSendPlainText
       />
     </>
@@ -167,14 +269,25 @@ const FolderEmoticonPickerMenu: FC<OwnProps & StateProps> = ({
     const mobileClassName = buildClassName(
       'SymbolMenu mobile-menu',
       transitionClassNames,
-      'left-column-open',
-      'in-attachment-modal',
+      isLeftColumnShown && 'left-column-open',
+      isAttachmentModal && 'in-attachment-modal',
+      isMessageComposer && 'in-middle-column',
     );
 
+    if (isAttachmentModal) {
+      return (
+        <div className={mobileClassName}>
+          {content}
+        </div>
+      );
+    }
+
     return (
-      <div className={mobileClassName}>
-        {content}
-      </div>
+      <Portal>
+        <div className={mobileClassName}>
+          {content}
+        </div>
+      </Portal>
     );
   }
 
@@ -182,7 +295,7 @@ const FolderEmoticonPickerMenu: FC<OwnProps & StateProps> = ({
     <Menu
       isOpen={isOpen}
       onClose={onClose}
-      withPortal // ={isAttachmentModal}
+      withPortal={isAttachmentModal}
       className={buildClassName('SymbolMenu', className)}
       onCloseAnimationEnd={onClose}
       onMouseEnter={!IS_TOUCH_ENV ? handleMouseEnter : undefined}
@@ -190,7 +303,10 @@ const FolderEmoticonPickerMenu: FC<OwnProps & StateProps> = ({
       noCloseOnBackdrop={!IS_TOUCH_ENV}
       noCompact
       // eslint-disable-next-line react/jsx-props-no-spreading
-      {...menuPositionOptions}
+      {...(isAttachmentModal ? menuPositionOptions : {
+        positionX: 'left',
+        positionY: 'bottom',
+      })}
     >
       {content}
     </Menu>
@@ -200,6 +316,7 @@ const FolderEmoticonPickerMenu: FC<OwnProps & StateProps> = ({
 export default memo(withGlobal<OwnProps>(
   (global): StateProps => {
     return {
+      isLeftColumnShown: selectTabState(global).isLeftColumnShown,
       isBackgroundTranslucent: selectIsContextMenuTranslucent(global),
     };
   },
