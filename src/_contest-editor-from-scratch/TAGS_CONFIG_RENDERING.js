@@ -1,6 +1,6 @@
 import { getChildTextNodes, styleStringToObject } from './helpers.js';
-// import { getPrettyCodeLanguageName } from '../../src/util/prettyCodeLanguageNames';
-function getPrettyCodeLanguageName(s) {return s;}
+import { getPrettyCodeLanguageName } from '../../src/util/prettyCodeLanguageNames';
+
 export default {
   b: {
     formattingAlias: 'bold',
