@@ -38,6 +38,7 @@ import Button from '../../ui/Button';
 import TextTimer from '../../ui/TextTimer';
 import TextFormatter from './TextFormatter.async';
 import { ISelectedTextFormats } from './TextFormatter';
+import FromScratch from '../../../_contest-editor-from-scratch/FromScratch';
 
 const CONTEXT_MENU_CLOSE_DELAY_MS = 100;
 // Focus slows down animation, also it breaks transition layout in Chrome
@@ -151,7 +152,7 @@ const MessageInput: FC<OwnProps & StateProps> = ({
   } = getActions();
 
   // eslint-disable-next-line no-null/no-null
-  let inputRef = useRef<HTMLDivElement>(null);
+  let inputRef = useRef<FromScratch>(null);
   if (ref) {
     inputRef = ref;
   }

@@ -15,11 +15,11 @@ I decided to build the editor based on Custom Elements. Reasons:
 
 Functionality:
 - Self-written history management
-- Self-written markdown parser
+- Self-written markdown parser, supporting [these entities](https://core.telegram.org/api/entities#allowed-entities) and also links
 - Real-time content sanitization
 - It doesn't matter what external reason the data changed -
-  the rendering will always correspond to the specified set of rules
-- It has some API that allows external code to track text styles at the cursor position, reset history etc.
+  the rendering will always correspond to the specified set of rules (allowed tags, attributes, other rules)
+- It has some API that allows external code to track text styles at the cursor position, reset history, etc.
 
 Features:
 - When pasting markdown, it prompts whether it should parse markdown before pasting - very useful feature, especially for testing

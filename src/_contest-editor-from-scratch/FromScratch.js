@@ -185,17 +185,17 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
       this.history.saveState();
     }
 
-    if (e.inputType.startsWith('format')) {
-      this.history.saveState();
-    }
-
-    if (!window.getSelection().isCollapsed) {
-      this.history.saveState();
+    if (e.inputType.startsWith('format') || e.inputType.startsWith('delete')) {
+      const selection = window.getSelection();
+      if (!selection.isCollapsed) {
+        this.history.saveState();
+      }
     }
 
     if (e.inputType.startsWith('insert')) {
       const selection = window.getSelection();
       if (!selection.isCollapsed) {
+        this.history.updateCurrent();
         const range = selection.getRangeAt(0);
         range.deleteContents();
         this.history.saveState();
@@ -325,19 +325,37 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
 
   set innerHTML(html) {
     log('set innerHTML', html);
-    let text = html.replace(/<br *\/?>/gi, '\n');
-    text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: false });
-    text = parseMarkdownToHtml(text, { processOnlyTags: ['```'] });
-    text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: true });
-    //super.innerHTML = '';
-
+    let text = FromScratch.parseMarkdownAndHtml(html);
     this.history.reset();
     super.innerHTML = text;
     this.history.saveState();
   }
 
+  updateInnerHtml(html) {
+    log('updateInnerHtml', html);
+    let text = FromScratch.parseMarkdownAndHtml(html);
+    this.history.updateCurrent();
+    super.innerHTML = text;
+    this.history.saveState();
+  }
+
+  static parseMarkdownAndHtml(html) {
+    let text = html.replace(/<br *\/?>/gi, '\n');
+    text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: false });
+    text = parseMarkdownToHtml(text, { processOnlyTags: ['```'] });
+    text = sanitizeRichHtml(text, TAGS_CONFIG_RENDERING, { processMarkdown: true });
+
+    return text;
+  }
+
   get innerHTML() {
-    return super.innerHTML;
+    const result = super.innerHTML;
+
+    if (result === '<br>') {
+      return '';
+    }
+
+    return result;
   }
 
   handlePaste(e) {

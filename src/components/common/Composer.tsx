@@ -1188,6 +1188,10 @@ const Composer: FC<OwnProps & StateProps> = ({
     }
   }, [handleFileSelect, requestedDraftFiles, resetOpenChatWithDraft]);
 
+  useEffect(() => {
+    inputRef?.current?.history.reset();
+  }, [editingMessage, chatId, threadId]);
+
   const handleCustomEmojiSelect = useLastCallback((emoji: ApiSticker, inInputId?: string) => {
     const emojiSetId = 'id' in emoji.stickerSetInfo && emoji.stickerSetInfo.id;
     if (!emoji.isFree && !isCurrentUserPremium && !isChatWithSelf && emojiSetId !== chatEmojiSetId) {
