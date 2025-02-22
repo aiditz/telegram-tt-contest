@@ -189,6 +189,10 @@ export default class FromScratch extends HTMLElement { // Safari does not suppor
       this.history.saveState();
     }
 
+    if (!window.getSelection().isCollapsed) {
+      this.history.saveState();
+    }
+
     if (e.inputType.startsWith('insert')) {
       const selection = window.getSelection();
       if (!selection.isCollapsed) {
