@@ -105,7 +105,7 @@ html.theme-dark .ChatFoldersColumn {
     display: none;
   }
   .ChatFoldersColumn {
-    max-width: 5rem;
+    width: 5rem;
   }
   .LeftColumn--folders-left #LeftMainHeader {
     > button:not(:has(.state-back)) {
@@ -121,7 +121,7 @@ html.theme-dark .ChatFoldersColumn {
 
 @media (max-width: 925px) {
   .ChatFoldersColumn {
-    max-width: 0 !important;
+    width: 0 !important;
     display: none;
   }
   .ChatFoldersTabs--view-top {
@@ -137,13 +137,13 @@ html.theme-dark .ChatFoldersColumn {
     display: none;
   }
   .ChatFoldersColumn {
-    max-width: 5rem;
+    width: 5rem;
   }
 }
 
 .LeftColumn--folders-top {
   .ChatFoldersColumn {
-    max-width: 0 !important;
+    width: 0 !important;
   }
   .ChatFoldersTabs--view-top {
     display: flex !important;
